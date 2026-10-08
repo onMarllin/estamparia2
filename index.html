@@ -44,9 +44,38 @@ header.top{background:var(--panel);border:3px solid var(--edge);border-top:0;mar
 .mission{display:flex;align-items:center;gap:12px;margin-top:12px;padding:10px 12px;border:2px dashed var(--yelDim);background:#1f1d14}
 .mission .tag{font-family:var(--display);font-size:12px;color:var(--btnText);background:var(--yel);padding:2px 6px;flex:none}
 .mission .rw{margin-left:auto;color:var(--yel);white-space:nowrap;font-size:15px}
+.mission.go{border-style:solid;border-color:var(--purple);background:#221c33}
+.mission.go .tag{background:var(--purple);color:#1a1030}
+.mission.go .btn{margin-left:auto}
+/* universo e nível */
+.lvrow{display:flex;align-items:center;flex-wrap:wrap;gap:6px 12px;margin-top:6px}
+.lvrow .uni{font-size:14px;color:var(--purple);border:2px solid #4a3f6b;background:#221c33;padding:1px 8px}
+.lvbar{display:block;width:140px;height:10px;background:var(--edge);border:2px solid var(--edge)}
+.lvbar i{display:block;height:100%;width:0;background:var(--purple);transition:width .3s linear}
+/* progresso */
+.salto{border-color:var(--edge);box-shadow:inset 0 0 0 2px #4a3f6b}
+.portalrow{display:grid;grid-template-columns:auto 1fr;gap:14px;align-items:center}
+.portalrow canvas{width:96px;height:96px;background:#120e1c;border:3px solid var(--edge)}
+.pips{display:flex;gap:3px;flex-wrap:wrap}.pips i{width:10px;height:10px;border:2px solid var(--edge);background:var(--line)}.pips i.on{background:var(--purple)}
+.tech .btn{align-self:flex-start}
+/* ranking */
+.tbl{overflow-x:auto}
+table.rank{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}
+table.rank th{font-size:13px;font-weight:500;color:var(--muted);text-align:left;padding:4px 8px;border-bottom:2px solid var(--line);white-space:nowrap}
+table.rank td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:middle}
+table.rank .r{text-align:right}
+table.rank td{white-space:nowrap}
+table.rank td .fab{display:block;font-size:12px}
+table.rank tr.me td{background:#2c2640}
+table.rank tr.me td:first-child{box-shadow:inset 4px 0 0 var(--purple)}
+.pos{font-family:var(--display);font-size:14px}
+.pos.p1{color:#f2c230}.pos.p2{color:#c9d3da}.pos.p3{color:#d08a4a}
+/* portal entre universos */
+.portal{position:fixed;inset:0;z-index:40;pointer-events:none;background:radial-gradient(circle at 50% 50%,#fff4c0 0 4%,#f2c230 4% 9%,#b98ae6 9% 16%,#55a3e6 16% 24%,#221c33 24% 60%,#0a0d10 60%);animation:portal 1.8s steps(12) forwards}
+@keyframes portal{0%{opacity:0;transform:scale(.2)}35%{opacity:1;transform:scale(1)}70%{opacity:1;transform:scale(1.6)}100%{opacity:0;transform:scale(3)}}
 
 /* ---------- abas ---------- */
-.tabs{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;display:grid;grid-template-columns:repeat(5,1fr);gap:6px;background:var(--bg);padding:10px 0 8px;margin-top:4px}
+.tabs{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;display:grid;grid-template-columns:repeat(6,1fr);gap:6px;background:var(--bg);padding:10px 0 8px;margin-top:4px}
 .tabs button{font:inherit;font-size:15px;font-weight:600;color:var(--text);background:var(--panel);border:3px solid var(--edge);box-shadow:inset 0 -3px 0 var(--line);padding:8px 4px 10px;cursor:pointer;position:relative}
 .tabs button[aria-current="page"]{background:var(--yel);color:var(--btnText);box-shadow:inset 0 -3px 0 var(--btnSh)}
 .badge{position:absolute;top:-9px;right:-4px;background:var(--red);color:#fff;border:2px solid var(--edge);font-size:12px;min-width:22px;padding:0 4px}
@@ -162,7 +191,9 @@ summary{cursor:pointer;color:var(--yel);font-weight:600}
 @media (max-width:640px){
   body{font-size:16px}
   .tabs{gap:4px}
-  .tabs button{font-size:13px;padding:7px 2px 9px}
+  .tabs button{font-size:12px;padding:7px 1px 9px}
+  .lvbar{width:100px}
+  .portalrow{grid-template-columns:1fr}.portalrow canvas{width:64px;height:64px}
   .ctrl{margin-left:0;width:100%}
   .ctrl button{flex:1}
   .ctrl .sep{display:none}
@@ -180,7 +211,7 @@ summary{cursor:pointer;color:var(--yel);font-weight:600}
 <div class="page">
 <header class="top">
   <div class="brandrow">
-    <div><div class="brand">Golpe de Prensa</div><h1 class="plant" id="plantName">Estamparia</h1></div>
+    <div><div class="brand">Golpe de Prensa</div><h1 class="plant" id="plantName">Estamparia</h1><div class="lvrow" id="lvrow"></div></div>
     <div class="clock num" data-l="clock"></div>
   </div>
   <div class="hudrow">
@@ -204,13 +235,19 @@ summary{cursor:pointer;color:var(--yel);font-weight:600}
   <button data-act="tab" data-arg="pedidos">Pedidos<span class="badge" id="b-ped" hidden></span></button>
   <button data-act="tab" data-arg="equipe">Equipe</button>
   <button data-act="tab" data-arg="painel">Painel<span class="badge" id="b-pain" hidden></span></button>
-  <button data-act="tab" data-arg="trofeus">Troféus<span class="badge" id="b-tro" hidden></span></button>
+  <button data-act="tab" data-arg="progresso">Progresso<span class="badge" id="b-tro" hidden></span></button>
+  <button data-act="tab" data-arg="ranking">Ranking</button>
 </nav>
 <main id="view"></main>
 </div>
 <div id="modal" class="modal" hidden role="dialog" aria-modal="true"><div class="sheet" id="mbody"></div></div>
 <div id="toasts" aria-live="polite"></div>
 <script>
+// ================== RANKING ONLINE ==================
+// Cole entre as aspas o endereço do App da Web do Google Apps Script (termina em /exec).
+// Deixe vazio para jogar sem ranking.
+const RANKING_URL = 'https://script.google.com/macros/s/AKfycbzXLGDBkvYUzeCmXGAG2KgbD5uLkbBcyNvJZy_-8gCOTS3Qt3w9nkjHGmeMNY1Aj3lZ/exec';
+
 // ================== MOTOR DA FÁBRICA ==================
 const rnd=(a,b)=>a+Math.random()*(b-a);
 const rint=(a,b)=>Math.floor(rnd(a,b+1));
@@ -256,8 +293,30 @@ const TRAITS={
   incansavel:{nome:'Incansável',desc:'Aprende 50% mais rápido.'},
   craque:{nome:'Craque',desc:'Rende como se tivesse um nível a mais.'}
 };
-function rollTrait(){const r=Math.random();return r<0.1?'craque':r<0.4?'rapido':r<0.7?'caprichoso':'incansavel';}
-function makeStaff(role,lv){return {id:uid(),nome:pick(NOMES)+' '+pick(SOBRE),role,lv,xp:0,trait:rollTrait(),look:{sk:rint(0,4),hc:rint(0,5),hs:rint(0,3)}};}
+// ---------- universos e tecnologias permanentes ----------
+const UNIVERSOS=['Terra','Marte','Lua de Gelo','Planeta Magma','Nebulosa Verde','Dimensão Neon','Anel de Saturno','Buraco de Minhoca'];
+const nomeUni=u=>UNIVERSOS[u-1]||('Dimensão '+u);
+const TECHS={
+  capital:{nome:'Capital de giro',desc:'Começa cada universo com +R$ 50.000 por nível.',max:10,custo:l=>1+l},
+  contrato:{nome:'Contratos premium',desc:'Clientes pagam +5% por peça, por nível.',max:10,custo:l=>1+l},
+  smed:{nome:'Troca rápida (SMED)',desc:'Setup 10% mais rápido por nível.',max:5,custo:l=>1+l},
+  fama:{nome:'Fama de mercado',desc:'Começa com +10 de reputação por nível (meia estrela).',max:5,custo:l=>1+l},
+  aco:{nome:'Aço de primeira',desc:'Peças geram 8% menos defeito por nível.',max:5,custo:l=>2+l},
+  preditiva:{nome:'Manutenção preditiva',desc:'Prensas quebram 10% menos por nível.',max:5,custo:l=>2+l},
+  olheiro:{nome:'Olheiro de talentos',desc:'+5% de chance de aparecer Craque no RH, por nível.',max:4,custo:l=>2+l},
+  escola:{nome:'Escola técnica',desc:'Todo mundo contratado já chega com +1 nível, por nível.',max:3,custo:l=>[2,5,9][l]},
+  galpao:{nome:'Galpão equipado',desc:'Começa com prensas extras já com operador: nível 1 ganha uma de 400 t, nível 2 uma de 600 t, nível 3 uma de 800 t.',max:3,custo:l=>[3,6,10][l]}
+};
+const TECH_ORDER=['capital','contrato','smed','fama','aco','preditiva','olheiro','escola','galpao'];
+const NIVEL_SALTO=10, LVK=25000;
+const tec=(S,k)=>(S&&S.meta&&S.meta.ups&&S.meta.ups[k])||0;
+const uniDe=S=>(S&&S.meta&&S.meta.uni)||1;
+const nivelDe=rec=>1+Math.floor(Math.sqrt(Math.max(0,rec)/LVK));
+const recDoNivel=n=>LVK*(n-1)*(n-1);
+const nivelSalto=S=>NIVEL_SALTO+2*(uniDe(S)-1);
+const patentesPara=S=>{const n=nivelDe(S.tot.receita||0);return n>=nivelSalto(S)?Math.floor((n-1)*(1+0.25*(uniDe(S)-1))):0;};
+function rollTrait(S){const r=Math.random(),c=0.1+0.05*tec(S,'olheiro');return r<c?'craque':r<c+0.3?'rapido':r<c+0.6?'caprichoso':'incansavel';}
+function makeStaff(role,lv,S){return {id:uid(),nome:pick(NOMES)+' '+pick(SOBRE),role,lv:Math.min(MAXLV,lv+tec(S,'escola')),xp:0,trait:rollTrait(S),look:{sk:rint(0,4),hc:rint(0,5),hs:rint(0,3)}};}
 function effLv(s){let l=s.lv+(s.trait==='craque'?1:0);if(s.role!=='operador'&&s.role!=='preparador'&&(s.trait==='rapido'||s.trait==='caprichoso'))l+=(s.trait==='caprichoso'&&s.role==='inspetor')?1:0.5;return l;}
 const salario=s=>Math.round(ROLES[s.role].sal*(1+0.25*(s.lv-1)));
 const admissao=s=>salario(s)*3;
@@ -285,7 +344,7 @@ const opPerf=lv=>Math.min(0.95,0.66+0.045*(lv-1));
 const opDet=lv=>0.4+0.05*(lv-1);
 const opDefMult=lv=>1.2-0.06*(lv-1);
 const condDefMult=c=>1+(100-c)/60;
-const hazard=c=>(1/5000)*(1+Math.pow((100-c)/25,2));
+const hazard=(c,S)=>(1/5000)*(1+Math.pow((100-c)/25,2))*(1-0.1*tec(S,'preditiva'))*(1+0.1*(uniDe(S)-1));
 
 function newDay(){return {plan:0,run:0,prod:0,ideal:0,def:0,scrap:0,esc:0,brk:0,loss:{setup:0,brk:0,mat:0,pm:0,noop:0}};}
 
@@ -300,7 +359,7 @@ function makeOrder(S,forceT){
   const pm={5000:0.96,3000:1,1500:1.06,800:1.12,400:1.2}[ppm];
   const qtd=Math.max(2000,Math.round(rate*rnd(0.35,1.1)/500)*500);
   const dias=Math.max(1,Math.ceil(qtd/rate*1.7+0.4));
-  return {id:uid(),cli:pick(CLIENTES),part:part.id,qtd,preco:+(part.preco*pm*(1+S.rep/500)).toFixed(2),ppm,dias,st:'oferta',exp:S.t+2*DAY,good:0,esc:0,scrap:0,press:null,due:null};
+  return {id:uid(),cli:pick(CLIENTES),part:part.id,qtd,preco:+(part.preco*pm*(1+S.rep/500)*(1+0.05*tec(S,'contrato'))*(1+0.15*(uniDe(S)-1))).toFixed(2),ppm,dias,st:'oferta',exp:S.t+2*DAY,good:0,esc:0,scrap:0,press:null,due:null};
 }
 
 // ---------- simulação de uma prensa ----------
@@ -327,6 +386,7 @@ function stepPress(S,p,dt,E,ev){
       const free=S.staff.filter(s=>s.role==='preparador'&&!S.prepBusy.includes(s.id)).sort((a,b)=>b.lv-a.lv)[0];
       if(free){p.prep=free.id;S.prepBusy.push(free.id);p.rem=Math.max(25,90-12*(effLv(free)-1)-(free.trait==='rapido'?15:0));}
       else{p.prep=null;p.rem=180;}
+      p.rem*=1-0.1*tec(S,'smed');
       p.st='setup';p.setupPart=o.part;p.setupTot=p.rem;
       continue;
     }
@@ -335,7 +395,7 @@ function stepPress(S,p,dt,E,ev){
       p.st='pm';p.rem=Math.max(30,60-6*(E.tecLv-1));p.remTot=p.rem;p.tec=freeTec(S);ev('pm',{p,auto:true});continue;
     }
     // quebra
-    if(Math.random()<hazard(p.cond)*dt){
+    if(Math.random()<hazard(p.cond,S)*dt){
       const withTec=Math.random()<E.tecCov;
       p.st='broken';p.rem=withTec?Math.max(60,150-15*(E.tecLv-1)):480;p.remTot=p.rem;
       const custo=withTec?2000:8000; S.cash-=custo; p.tec=withTec?freeTec(S):null;
@@ -363,7 +423,7 @@ function finishOrder(S,p,o,ev){
   const late=S.t>o.due;
   const ppm=o.esc/o.qtd*1e6;
   const receita=o.qtd*o.preco*(late?0.9:1);
-  S.cash+=receita;
+  S.cash+=receita;S.tot.receita=(S.tot.receita||0)+receita;
   const comp=ppm>o.ppm;
   let custoRec=0;
   if(comp){custoRec=Math.round(3000+o.esc*o.preco*2);S.cash-=custoRec;S.rep=clamp(S.rep-6,0,100);
@@ -420,8 +480,8 @@ function dayRollover(S,ev){
 function makeCands(S){
   const roles=['operador','operador','operador','preparador','lider','inspetor','inspetor','tecnico','tecnico','metrologista'];
   const mx=Math.min(4,1+Math.floor(S.rep/25));
-  const out=[makeStaff('operador',rint(1,mx))];
-  while(out.length<6) out.push(makeStaff(pick(roles),rint(1,mx)));
+  const out=[makeStaff('operador',rint(1,mx),S)];
+  while(out.length<6) out.push(makeStaff(pick(roles),rint(1,mx),S));
   return out;
 }
 function step8D(S,ev){
@@ -445,12 +505,16 @@ function simStep(S,dt,ev){
   step8D(S,ev);
   if(dayOf(S.t)>before) dayRollover(S,ev);
 }
-function newState(nome){
-  const S={v:2,cashDay:120000,nome:nome||'Estamparia Aço Norte',t:6*60,cash:120000,rep:10,press:[],staff:[],orders:[],board:[],cands:[],prepBusy:[],hist:[],days:[],comps:[],
-    tot:{prod:0,brk:0,ped:0,noPrazo:0},def:{},speed:1,mis:0,nextAud:7,auds:[],log:[],over:false};
-  PARTS.forEach(p=>S.def[p.id]=p.def);
-  addPress(S,'p400');
-  const op=makeStaff('operador',1); S.staff.push(op); S.press[0].op=op.id;
+function novaMeta(){return {uni:1,pat:0,patTot:0,ups:{},vida:0,melhorNivel:1,saltos:0};}
+function newState(nome,meta){
+  meta=meta||novaMeta();
+  const cash0=120000+50000*(meta.ups.capital||0);
+  const S={v:3,meta,cashDay:cash0,nome:nome||'Estamparia Aço Norte',t:6*60,cash:cash0,rep:Math.min(100,10+10*(meta.ups.fama||0)),press:[],staff:[],orders:[],board:[],cands:[],prepBusy:[],hist:[],days:[],comps:[],
+    tot:{prod:0,brk:0,ped:0,noPrazo:0,receita:0},def:{},speed:1,mis:meta.uni>1?999:0,nextAud:7,auds:[],log:[],over:false};
+  PARTS.forEach(p=>S.def[p.id]=p.def*(1-0.08*tec(S,'aco'))*(1+0.1*(meta.uni-1)));
+  for(const tipo of ['p400','p400','p600','p800'].slice(0,1+tec(S,'galpao'))){
+    const p=addPress(S,tipo);const op=makeStaff('operador',1,S);S.staff.push(op);p.op=op.id;
+  }
   S.board=[makeOrder(S,400),makeOrder(S,400),makeOrder(S,400)];
   S.cands=makeCands(S);
   return S;
@@ -463,6 +527,17 @@ function addPress(S,tipo){
   if(free) p.op=free.id;
   return p;
 }
+// salto de universo: guarda patentes, tecnologias, troféus e o faturamento acumulado
+function saltarUniverso(S){
+  const ganho=patentesPara(S);if(!ganho)return null;
+  const m=S.meta;
+  m.pat+=ganho;m.patTot+=ganho;m.vida+=S.tot.receita||0;m.melhorNivel=Math.max(m.melhorNivel,nivelDe(S.tot.receita||0));m.uni+=1;m.saltos+=1;
+  const N=newState(S.nome,m);
+  N.tro=S.tro||[];N.qAsked=S.qAsked||[];N.speed=S.speed;
+  return {N,ganho};
+}
+function comprarTec(S,k){const t=TECHS[k],l=tec(S,k);if(!t||l>=t.max)return false;const c=t.custo(l);if(S.meta.pat<c)return false;S.meta.pat-=c;S.meta.ups[k]=l+1;return true;}
+function faturamentoVida(S){return (S.meta?S.meta.vida:0)+(S.tot.receita||0);}
 function acceptOrder(S,o){
   S.board=S.board.filter(x=>x!==o);
   o.st='ativo';o.due=S.t+o.dias*DAY;
@@ -609,20 +684,32 @@ function sceneUpdate(now,dt){
   Scene.parts=Scene.parts.filter(p=>{p.life-=dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=90*dt;return p.life>0;});
   Scene.trucks=Scene.trucks.filter(tr=>{tr.t+=dt;return tr.t<5;});
 }
+// cores do chão de fábrica em cada universo
+const TEMAS=[
+  {piso:'#2a3038',grade:'#2e353e',parede:'#3a4350',ceu:'#5e87ad',brilho:'#9cc0de',corredor:'#323a44',doca:'#232830'},
+  {piso:'#3a2a26',grade:'#43312c',parede:'#5a3a30',ceu:'#d9774a',brilho:'#f0b48a',corredor:'#44322c',doca:'#2e221f'},
+  {piso:'#2c3640',grade:'#34404c',parede:'#4a5c6c',ceu:'#bfe3f2',brilho:'#ffffff',corredor:'#36424e',doca:'#25303a'},
+  {piso:'#2e2222',grade:'#3a2a2a',parede:'#4a2a24',ceu:'#f0923a',brilho:'#ffd05e',corredor:'#3a2828',doca:'#251b1b'},
+  {piso:'#233029',grade:'#2a3a31',parede:'#2f4a3a',ceu:'#6fdc9a',brilho:'#c8f7da',corredor:'#2c3a33',doca:'#1c2722'},
+  {piso:'#241f33',grade:'#2e2742',parede:'#3a2f5a',ceu:'#e05ad0',brilho:'#ffb3f2',corredor:'#2c2540',doca:'#1d1929'},
+  {piso:'#332d22',grade:'#3d362a',parede:'#55492f',ceu:'#e8c97a',brilho:'#fff0c2',corredor:'#3a3328',doca:'#29241b'},
+  {piso:'#15151c',grade:'#1f1f2a',parede:'#26263a',ceu:'#8a7cff',brilho:'#d6d0ff',corredor:'#1d1d28',doca:'#101016'}
+];
+const temaAtual=()=>TEMAS[((uniDe(S)-1)%TEMAS.length+TEMAS.length)%TEMAS.length];
 function sceneDraw(cv,now){
-  const c=cv.getContext('2d'),W=SC.W,H=SC.H;
+  const c=cv.getContext('2d'),W=SC.W,H=SC.H,T=temaAtual();
   const F=(x,y,w,h,col)=>{c.fillStyle=col;c.fillRect(Math.round(x),Math.round(y),w,h);};
   // chão
-  F(0,0,W,H,'#2a3038');
-  for(let x=0;x<W;x+=8)F(x,SC.TOP,1,SC.DOCK-SC.TOP,'#2e353e');
-  for(let y=SC.TOP;y<SC.DOCK;y+=8)F(0,y,W,1,'#2e353e');
+  F(0,0,W,H,T.piso);
+  for(let x=0;x<W;x+=8)F(x,SC.TOP,1,SC.DOCK-SC.TOP,T.grade);
+  for(let y=SC.TOP;y<SC.DOCK;y+=8)F(0,y,W,1,T.grade);
   // parede com janelas
-  F(0,0,W,SC.TOP,'#3a4350');F(0,SC.TOP-2,W,2,'#232a33');
-  for(let x=8;x<W-10;x+=26){F(x,3,16,8,'#1d2a38');F(x+1,4,6,6,'#5e87ad');F(x+9,4,6,6,'#5e87ad');F(x+1,4,2,2,'#9cc0de');F(x+9,4,2,2,'#9cc0de');}
+  F(0,0,W,SC.TOP,T.parede);F(0,SC.TOP-2,W,2,'#00000055');
+  for(let x=8;x<W-10;x+=26){F(x,3,16,8,'#1d2a38');F(x+1,4,6,6,T.ceu);F(x+9,4,6,6,T.ceu);F(x+1,4,2,2,T.brilho);F(x+9,4,2,2,T.brilho);}
   // corredores com faixa amarela
-  for(let r=0;r<2;r++){const y=SC.TOP+r*(SC.ROWH+SC.AISLE)+SC.ROWH;F(0,y,W,SC.AISLE,'#323a44');for(let x=0;x<W;x+=6){F(x,y,3,1,'#f2c230');F(x+3,y+SC.AISLE-1,3,1,'#f2c230');}}
+  for(let r=0;r<2;r++){const y=SC.TOP+r*(SC.ROWH+SC.AISLE)+SC.ROWH;F(0,y,W,SC.AISLE,T.corredor);for(let x=0;x<W;x+=6){F(x,y,3,1,'#f2c230');F(x+3,y+SC.AISLE-1,3,1,'#f2c230');}}
   // doca
-  F(0,SC.DOCK,W,H-SC.DOCK,'#232830');for(let x=0;x<W;x+=6)F(x,SC.DOCK,3,1,'#f2c230');
+  F(0,SC.DOCK,W,H-SC.DOCK,T.doca);for(let x=0;x<W;x+=6)F(x,SC.DOCK,3,1,'#f2c230');
   // estante e bancada
   F(3,SC.DOCK+3,22,12,'#5a4633');F(3,SC.DOCK+8,22,1,'#3a2c20');
   [[4,4,'#b98a4e'],[10,4,'#8fa9c0'],[17,4,'#b98a4e'],[5,9,'#8fa9c0'],[12,9,'#b98a4e'],[19,9,'#c9d3da']].forEach(([a,b,col])=>F(a,SC.DOCK+b,5,4,col));
@@ -715,10 +802,37 @@ const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',
 const first=n=>String(n).split(' ')[0];
 const RM=matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-const KEY='golpe-de-prensa-v2';
+const KEY='golpe-de-prensa-v3', KEY_OLD='golpe-de-prensa-v2';
 let S=null, tab='fabrica', modal=null, modalRef=null, sig='', lastSave=0, audit=null;
 function save(){if(!S)return;try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
-function loadSave(){try{const r=localStorage.getItem(KEY);if(r){const s=JSON.parse(r);if(s&&s.v===2&&s.press)return s;}}catch(e){}return null;}
+function loadSave(){try{
+  let r=localStorage.getItem(KEY);if(r){const s=JSON.parse(r);if(s&&s.v===3&&s.press)return s;}
+  r=localStorage.getItem(KEY_OLD);if(r){const s=JSON.parse(r);if(s&&s.v===2&&s.press){s.v=3;s.meta=novaMeta();s.tot.receita=(s.hist||[]).reduce((a,h)=>a+(h.receita||0),0);return s;}}
+}catch(e){}return null;}
+
+// ---------- jogador e ranking online ----------
+const JOG_KEY='gdp-jogador';
+let JOG={pid:null,apelido:''};
+try{JOG=Object.assign(JOG,JSON.parse(localStorage.getItem(JOG_KEY)||'{}'));}catch(e){}
+function saveJog(){try{localStorage.setItem(JOG_KEY,JSON.stringify(JOG));}catch(e){}}
+if(!JOG.pid){JOG.pid=(window.crypto&&crypto.randomUUID)?crypto.randomUUID():Date.now().toString(36)+Math.random().toString(36).slice(2)+Math.random().toString(36).slice(2);saveJog();}
+const fnv=s=>{let h=0x811c9dc5;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,0x01000193)>>>0;}return ('0000000'+h.toString(16)).slice(-8);};
+const RK={lista:null,total:0,erro:null,carregando:false,quando:0,ultimoEnvio:0,enviando:false,trocando:false};
+const rankLigado=()=>typeof RANKING_URL==='string'&&/^https:\/\//.test(RANKING_URL);
+async function carregarRanking(){
+  if(!rankLigado()||RK.carregando)return;RK.carregando=true;sig='';
+  try{const r=await fetch(RANKING_URL,{cache:'no-store'});const j=await r.json();if(!j.ok)throw new Error(j.erro||'resposta inválida');RK.lista=j.ranking||[];RK.total=j.total||RK.lista.length;RK.erro=null;RK.quando=Date.now();}
+  catch(e){RK.erro='Não consegui buscar o ranking agora. Confira a internet e toque em Atualizar.';}
+  RK.carregando=false;sig='';
+}
+async function enviarRanking(forcar){
+  if(!rankLigado()||!JOG.apelido||!S||RK.enviando)return false;
+  const agora=Date.now();if(!forcar&&agora-RK.ultimoEnvio<60000)return false;
+  RK.ultimoEnvio=agora;RK.enviando=true;
+  let ok=false;
+  try{const r=await fetch(RANKING_URL,{method:'POST',body:JSON.stringify({id:JOG.pid,apelido:JOG.apelido,fabrica:S.nome,universo:uniDe(S),nivel:nivelDe(S.tot.receita||0),faturamento:Math.floor(faturamentoVida(S)),trofeus:(S.tro||[]).length})});const j=await r.json();ok=!!j.ok;}catch(e){}
+  RK.enviando=false;return ok;
+}
 
 const pressById=id=>S.press.find(p=>p.id===id);
 const staffById=id=>S.staff.find(s=>s.id===id)||S.cands.find(s=>s.id===id);
@@ -776,6 +890,7 @@ function ev(type,d){
         log(`${s.nome} subiu para o nível ${s.lv}!`,'good');}
       if(d.ups.length)snd('up');
       if(dayOf(S.t)>=S.nextAud) S.audPending=true;
+      enviarRanking(false);
       break;}
     case '8d_fim':{const m=`8D da ${d.c.cli} resolvido! Essa peça agora sai com menos defeito.`;log(m,'good');toast(m,'good');snd('up');break;}
   }
@@ -810,8 +925,22 @@ const TROPHIES=[
   {id:'prazo',n:'Relógio suíço',d:'Faça 10 entregas seguidas no prazo.',r:20000,ok:()=>S.hist.length>=10&&S.hist.slice(-10).every(h=>!h.late)},
   {id:'golpes',n:'Um milhão de golpes',d:'Estampe 1 milhão de peças.',r:30000,ok:()=>S.tot.prod>=1e6},
   {id:'rep',n:'Nome na praça',d:'Chegue a 4 estrelas de reputação.',r:30000,ok:()=>S.rep>=80},
-  {id:'mi',n:'Milionário',d:'Tenha R$ 1 milhão em caixa.',r:0,ok:()=>S.cash>=1e6}
+  {id:'mi',n:'Milionário',d:'Tenha R$ 1 milhão em caixa.',r:0,ok:()=>S.cash>=1e6},
+  {id:'salto1',n:'Viajante',d:'Salte para outro universo pela primeira vez.',r:0,ok:()=>uniDe(S)>=2},
+  {id:'uni5',n:'Andarilho cósmico',d:'Chegue ao universo 5.',r:0,ok:()=>uniDe(S)>=5},
+  {id:'tec10',n:'Cientista',d:'Compre 10 níveis de tecnologia.',r:0,ok:()=>Object.values(S.meta.ups||{}).reduce((a,b)=>a+b,0)>=10},
+  {id:'nv25',n:'Fábrica lendária',d:'Leve uma fábrica ao nível 25.',r:0,ok:()=>nivelDe(S.tot.receita||0)>=25}
 ];
+function checkNivel(){
+  const n=nivelDe(S.tot.receita||0);
+  if(!S.lastLv)S.lastLv=n;
+  if(n>S.lastLv){
+    S.lastLv=n;snd('up');
+    if(n===nivelSalto(S)){toast(`Fábrica no nível ${n}! O salto para ${nomeUni(uniDe(S)+1)} está liberado.`,'gold');log(`Fábrica chegou ao nível ${n}. Salto de universo liberado na aba Progresso!`,'gold');}
+    else{toast(`Fábrica subiu para o nível ${n}!`,'good');log(`A fábrica subiu para o nível ${n}.`,'good');}
+    enviarRanking(false);
+  }
+}
 function checkMissions(){
   let m=MISSIONS[S.mis];
   while(m&&m.ok()){S.cash+=m.r;log(`Objetivo cumprido! Bônus de ${brl(m.r)}.`,'gold');toast(`Objetivo cumprido! +${brl(m.r)}`,'gold');snd('coin');S.mis++;m=MISSIONS[S.mis];}
@@ -938,6 +1067,7 @@ function showOver(){
   openModal(`<h2 class="bad">Fim de jogo</h2>
   <p class="muted">O caixa passou de ${brl(BANKRUPT)} e o banco fechou a torneira. Você chegou ao dia ${dayOf(S.t)}, entregou ${S.tot.ped} pedidos e ganhou ${(S.tro||[]).length} troféus.</p>
   <p class="muted">Dica: prensa parada e reclamação de cliente são os maiores ralos de dinheiro.</p>
+  ${S.meta&&(S.meta.uni>1||S.meta.patTot>0)?`<p class="tiny">Você continua no Universo ${S.meta.uni} e não perde as patentes nem as tecnologias.</p>`:''}
   <button class="btn wide" data-act="restart">Tentar de novo</button>`,'over');
 }
 const stars=(r,max=5)=>{const n=Math.max(0,Math.min(max,Math.round(r/20)));return `<b>${'★'.repeat(n)}</b>${'★'.repeat(max-n)}`;};
@@ -1002,6 +1132,7 @@ function live(k){
   switch(a){
     case 'clock':return `Dia ${dayOf(S.t)}, ${hhmm(S.t)}`;
     case 'cash':return brl(S.cash);
+    case 'lvnext':{const n=nivelDe(S.tot.receita||0);return `faltam ${brl(recDoNivel(n+1)-(S.tot.receita||0))} de faturamento para o nível ${n+1}`;}
     case 'pst':{const p=pressById(id);return p?pressState(p):'';}
     case 'pcond':{const p=pressById(id);return p?`${Math.round(p.cond)}%`:'';}
     case 'oprog':{const o=orderById(id);return o?`${num(Math.min(o.good,o.qtd))} de ${num(o.qtd)} peças`:'';}
@@ -1014,6 +1145,7 @@ function live(k){
 function liveW(k){
   const [a,id]=k.split(':');
   if(a==='pcond'){const p=pressById(id);return p?p.cond:0;}
+  if(a==='lvl'){const n=nivelDe(S.tot.receita||0),a0=recDoNivel(n),a1=recDoNivel(n+1);return ((S.tot.receita||0)-a0)/(a1-a0)*100;}
   if(a==='oprog'){const o=orderById(id);return o?Math.min(100,o.good/o.qtd*100):0;}
   return 0;
 }
@@ -1065,6 +1197,9 @@ function signature(){
   if(tab==='fabrica')parts.push(S.log.length?S.log[0].t+S.log[0].txt:'');
   if(tab==='equipe')parts.push(S.cands.map(c=>c.id).join(','));
   if(tab==='painel')parts.push(S.comps.some(c=>c.st==='8d')?Math.floor(S.t/60):0);
+  if(tab==='ranking')parts.push(RK.quando,RK.erro,RK.carregando,JOG.apelido,RK.trocando);
+  if(tab==='progresso')parts.push(S.meta.pat,JSON.stringify(S.meta.ups),patentesPara(S));
+  parts.push(nivelDe(S.tot.receita||0),uniDe(S));
   return parts.join('#');
 }
 function setBadge(sel,n){const b=$(sel);b.hidden=!n;b.textContent=n;}
@@ -1075,11 +1210,16 @@ function render(){
   $('#plantName').textContent=S.nome;
   const alertP=S.press.filter(p=>['broken','noop','nomat'].includes(p.st)).length;
   const idle=S.press.filter(p=>!p.ped).length;
-  setBadge('#b-fab',alertP);setBadge('#b-ped',idle&&S.board.length?idle:0);setBadge('#b-pain',S.comps.filter(c=>c.st==='aberta').length);setBadge('#b-tro',tab==='trofeus'?0:(S.troNew||0));
+  setBadge('#b-fab',alertP);setBadge('#b-ped',idle&&S.board.length?idle:0);setBadge('#b-pain',S.comps.filter(c=>c.st==='aberta').length);setBadge('#b-tro',tab==='progresso'?0:((S.troNew||0)+(patentesPara(S)?1:0)));
   const m=MISSIONS[S.mis];
-  $('#mission').innerHTML=m?`<div class="mission"><span class="tag">Objetivo ${S.mis+1}/${MISSIONS.length}</span><span>${m.t}</span><span class="rw">+${brl(m.r)}</span></div>`:'';
+  const nv=nivelDe(S.tot.receita||0),ns=nivelSalto(S);
+  $('#mission').innerHTML=m?`<div class="mission"><span class="tag">Objetivo ${S.mis+1}/${MISSIONS.length}</span><span>${m.t}</span><span class="rw">+${brl(m.r)}</span></div>`
+    :nv>=ns?`<div class="mission go"><span class="tag">Salto liberado</span><span>Você pode saltar para o Universo ${uniDe(S)+1}: ${nomeUni(uniDe(S)+1)} e levar ${patentesPara(S)} patentes.</span><button class="btn sm" data-act="tab" data-arg="progresso">Ver salto</button></div>`
+    :`<div class="mission"><span class="tag">Meta do universo</span><span>Leve a fábrica ao nível ${ns} para saltar de universo e ganhar patentes.</span><span class="rw">Nível ${nv} de ${ns}</span></div>`;
+  $('#lvrow').innerHTML=`<span class="uni">Universo ${uniDe(S)}: ${nomeUni(uniDe(S))}</span><span class="lvl">Nível ${nv}</span><span class="lvbar"><i data-w="lvl"></i></span><span class="tiny" data-l="lvnext"></span>`;
   const v=$('#view');
-  v.innerHTML=tab==='fabrica'?vFabrica():tab==='pedidos'?vPedidos():tab==='equipe'?vEquipe():tab==='painel'?vPainel():vTrofeus();
+  v.innerHTML=tab==='fabrica'?vFabrica():tab==='pedidos'?vPedidos():tab==='equipe'?vEquipe():tab==='painel'?vPainel():tab==='ranking'?vRanking():vProgresso();
+  if(tab==='ranking'&&rankLigado()&&!RK.carregando&&Date.now()-RK.quando>60000)carregarRanking();
   if(tab==='fabrica'){$('#sceneSlot').appendChild(sceneEl);sceneLabels();}
   updateLive();drawPortraits(performance.now());
 }
@@ -1160,12 +1300,56 @@ function vPainel(){
   <section class="panel"><div class="phead"><h2>Visita do auditor</h2><span class="tiny">${dA<=0?'Hoje':dA===1?'Amanhã':`Em ${dA} dias`}</span></div>
     <p class="muted">Como estaria se ele chegasse agora:</p><ul class="check">${ck}</ul></section>`;
 }
-function vTrofeus(){
+function vProgresso(){
   S.troNew=0;
-  const got=S.tro||[];
-  return `<section class="panel"><div class="phead"><h2>Troféus</h2><span class="tiny">${got.length} de ${TROPHIES.length}</span></div>
+  const got=S.tro||[], m=S.meta, nv=nivelDe(S.tot.receita||0), ns=nivelSalto(S), ganho=patentesPara(S);
+  const prox=uniDe(S)+1;
+  const salto=`<section class="panel salto"><div class="phead"><h2>Salto de universo</h2><span class="tiny">Universo ${uniDe(S)}: ${nomeUni(uniDe(S))}</span></div>
+    <div class="portalrow"><canvas class="px" id="portalCv" width="32" height="32" aria-hidden="true"></canvas>
+      <div style="display:flex;flex-direction:column;gap:6px;min-width:0">
+        <p>${ganho?`Sua fábrica chegou ao nível ${nv}. Saltando agora para o <b>Universo ${prox}: ${nomeUni(prox)}</b>, você leva <b class="gold">${ganho} patentes</b>.`:`Chegue ao nível ${ns} para abrir o portal. Hoje a fábrica está no nível ${nv}.`}</p>
+        <p class="tiny">Fica para trás: prensas, equipe, caixa, pedidos e reputação. Vai com você: patentes, tecnologias, troféus e o faturamento somado do ranking. Cada universo novo paga 15% a mais por peça, mas as prensas quebram e geram defeito 10% a mais, e o salto seguinte pede 2 níveis a mais.</p>
+        <p class="tiny">Quanto mais longe você levar a fábrica antes de saltar, mais patentes ganha.</p>
+      </div></div>
+    <button class="btn wide" data-act="salto" ${ganho?'':'disabled data-lock'}>${ganho?`Saltar para ${nomeUni(prox)} (+${ganho} patentes)`:`Liberado no nível ${ns}`}</button></section>`;
+  const techs=TECH_ORDER.map(k=>{const t=TECHS[k],l=tec(S,k),max=l>=t.max,c=max?0:t.custo(l);
+    const prox=['capital','galpao','fama'].includes(k);
+    return `<div class="card tech"><div class="row between wrap"><b>${t.nome}</b><span class="pips" aria-label="Nível ${l} de ${t.max}">${'<i class="on"></i>'.repeat(l)}${'<i></i>'.repeat(t.max-l)}</span></div>
+      <div class="tiny">${t.desc}${prox?' Vale a partir do próximo universo.':''}</div>
+      <button class="btn sm" data-act="buyTec" data-arg="${k}" ${max||m.pat<c?'disabled data-lock':''}>${max?'Nível máximo':`Comprar por ${c} ${c>1?'patentes':'patente'}`}</button></div>`;}).join('');
+  return salto+`<section class="panel"><div class="phead"><h2>Tecnologias</h2><span class="gold">${m.pat} ${m.pat===1?'patente disponível':'patentes disponíveis'}</span></div>
+    <p class="muted">Tecnologias são permanentes: valem em todos os universos daqui para frente.</p><div class="grid">${techs}</div></section>
+  <section class="panel"><div class="phead"><h2>Troféus</h2><span class="tiny">${got.length} de ${TROPHIES.length}</span></div>
     <div class="trophies">${TROPHIES.map(t=>{const on=got.includes(t.id);return `<div class="trophy ${on?'':'off'}"><canvas class="px" data-trophy="${on?1:0}" width="16" height="16"></canvas><div><b class="${on?'gold':''}">${t.n}</b><span class="tiny">${t.d}${t.r?` Prêmio ${brl(t.r)}.`:''}</span></div></div>`;}).join('')}</div></section>
-  <section class="panel"><h2>Recomeçar</h2><p class="muted">Apaga o progresso deste aparelho e abre uma fábrica nova.</p><div><button class="btn danger" data-act="reset">Recomeçar do zero</button></div></section>`;
+  <section class="panel"><h2>Recomeçar do zero</h2><p class="muted">Apaga tudo deste aparelho, inclusive patentes, tecnologias, universos e troféus. Para trocar de universo mantendo o progresso, use o salto lá em cima.</p><div><button class="btn danger" data-act="reset">Apagar tudo e recomeçar</button></div></section>`;
+}
+function vRanking(){
+  if(!rankLigado())return `<section class="panel"><h2>Ranking</h2><p class="muted">O ranking online ainda não está ligado nesta cópia do jogo. Quem publicou o jogo precisa colar o endereço da planilha do ranking no começo do arquivo, como explica o guia.</p></section>`;
+  if(!JOG.apelido||RK.trocando)return `<section class="panel"><h2>${RK.trocando?'Trocar apelido':'Entre no ranking'}</h2>
+    <p class="muted">Escolha um apelido. Todo mundo que joga vai ver o apelido, o nome da sua fábrica, o universo, o nível e o faturamento.</p>
+    <label for="apelidoInput">Apelido</label><input type="text" id="apelidoInput" maxlength="20" autocomplete="off" placeholder="Ex.: Rei da Prensa" value="${esc(JOG.apelido||'')}">
+    <div class="row wrap"><button class="btn" data-act="joinRank">${RK.trocando?'Salvar apelido':'Entrar no ranking'}</button>${RK.trocando?'<button class="btn ghost" data-act="cancelApelido">Cancelar</button>':''}</div></section>`;
+  const me=fnv(JOG.pid);
+  const pos=RK.lista?RK.lista.findIndex(r=>r.h===me):-1;
+  const rows=(RK.lista||[]).map((r,i)=>`<tr class="${r.h===me?'me':''}"><td class="r pos p${i+1}">${i+1}º</td><td><b>${esc(r.apelido)}</b><span class="tiny fab">${esc(r.fabrica)}</span></td><td class="r">${r.universo}</td><td class="r">${r.nivel}</td><td class="r">${brl(r.faturamento)}</td></tr>`).join('');
+  return `<section class="panel"><div class="phead"><h2>Ranking</h2><span class="tiny">${RK.quando?`Atualizado às ${new Date(RK.quando).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}`:''}</span></div>
+    <p class="muted">Quem faturou mais somando todos os universos fica no topo. Sua pontuação é enviada sozinha enquanto você joga.</p>
+    <div class="row wrap between"><span>Você joga como <b class="gold">${esc(JOG.apelido)}</b>${pos>=0?`, em <b>${pos+1}º lugar</b> de ${RK.total}`:''}.</span>
+      <span class="row wrap"><button class="btn sm" data-act="rankSend">Enviar agora</button><button class="btn sm ghost" data-act="rankRefresh">${RK.carregando?'Atualizando…':'Atualizar'}</button><button class="btn sm ghost" data-act="trocarApelido">Trocar apelido</button></span></div>
+    ${RK.erro?`<p class="bad">${RK.erro}</p>`:''}
+    ${RK.lista?(rows?`<div class="tbl"><table class="rank"><thead><tr><th class="r">#</th><th>Jogador</th><th class="r">Universo</th><th class="r">Nível</th><th class="r">Faturamento total</th></tr></thead><tbody>${rows}</tbody></table></div>`:'<p class="empty">Ninguém no ranking ainda. Seja o primeiro: toque em Enviar agora.</p>')
+      :RK.carregando?'<p class="empty">Buscando o ranking…</p>':''}
+    ${RK.lista&&pos<0?'<p class="tiny">Você ainda não aparece na lista. Toque em Enviar agora ou continue jogando: o envio é automático.</p>':''}</section>`;
+}
+function portalAnim(){
+  const el=document.createElement('div');el.className='portal';document.body.appendChild(el);
+  setTimeout(()=>el.remove(),RM?50:1800);
+}
+function drawPortal(now){
+  const c=document.getElementById('portalCv');if(!c)return;const x=c.getContext('2d');x.clearRect(0,0,32,32);
+  const on=!!patentesPara(S);const t=RM?0:now/1000;
+  for(let r=14;r>2;r-=2){const k=(r/2+Math.floor(t*6))%3;x.fillStyle=on?['#b98ae6','#f2c230','#55a3e6'][k]:['#394451','#2a3038','#4a5563'][k];
+    for(let a=0;a<64;a++){const an=a/64*Math.PI*2;x.fillRect(Math.round(16+Math.cos(an)*r),Math.round(16+Math.sin(an)*r),1,1);}}
 }
 
 // ---------- ações ----------
@@ -1176,7 +1360,7 @@ const ACT={
   help:()=>showHelp(),
   close:()=>closeModal(),
   staff:id=>showStaff(id),
-  start:()=>{const n=($('#plantInput').value||'').trim();S=newState(n||'Estamparia Aço Norte');S.speed=1;S.tro=[];
+  start:()=>{const n=($('#plantInput').value||'').trim();S=newState(n||'Estamparia Aço Norte',novaMeta());S.speed=1;S.tro=[];
     log('A fábrica abriu as portas! Aceite o primeiro pedido na aba Pedidos.','gold');closeModal();snd('buy');save();},
   accept:id=>{const o=S.board.find(x=>x.id===id);if(!o)return;acceptOrder(S,o);snd('click');log(`Pedido aceito: ${num(o.qtd)} peças para a ${o.cli}.`);toast('Pedido aceito! A prensa já vai ligar.','good');},
   buy:k=>{const P=PRESSES[k];if(S.cash<P.preco||S.press.length>=MAX_PRESSES)return;S.cash-=P.preco;const p=addPress(S,k);autoAssign(S);snd('buy');
@@ -1194,15 +1378,40 @@ const ACT={
     if(hasTec()){const E=effects(S);p.rem=Math.max(30,60-6*(E.tecLv-1));p.tec=freeTec(S);}else{if(S.cash<PM_EXT)return;S.cash-=PM_EXT;p.rem=240;}
     p.remTot=p.rem;p.st='pm';log(`Revisão começou na Prensa ${p.n}.`,'info');showPress(id);},
   open8d:id=>{const c=S.comps.find(x=>x.id===id);if(!c||c.st!=='aberta'||S.cash<COST_8D)return;S.cash-=COST_8D;c.st='8d';c.ini=S.t;c.fim=S.t+(S.staff.some(s=>s.role==='inspetor')?1:2)*DAY;snd('click');log(`Equipe montada para o 8D da ${c.cli}.`,'info');},
+  buyTec:k=>{if(comprarTec(S,k)){
+      if(k==='aco')for(const p of PARTS)S.def[p.id]*=(1-0.08*tec(S,'aco'))/(1-0.08*(tec(S,'aco')-1));
+      snd('buy');toast(`${TECHS[k].nome} agora no nível ${tec(S,k)}.`,'good');log(`Tecnologia comprada: ${TECHS[k].nome}, nível ${tec(S,k)}.`,'gold');}},
+  salto:()=>{const g=patentesPara(S);if(!g)return;const u=uniDe(S)+1;
+    openModal(`<h2>Saltar para o Universo ${u}: ${nomeUni(u)}?</h2>
+      <p class="muted">A fábrica atual fica para trás: prensas, equipe, caixa, pedidos e reputação. Você leva <b class="gold">${g} patentes</b>, as tecnologias, os troféus e o faturamento do ranking.</p>
+      <p class="tiny">${nomeUni(u)} paga 15% a mais por peça do que ${nomeUni(u-1)}, mas é um pouco mais difícil. O próximo salto pede nível ${nivelSalto(S)+2}.</p>
+      <div class="row wrap"><button class="btn" data-act="saltoYes">Abrir o portal</button><button class="btn ghost" data-act="close">Ainda não</button></div>`,'confirm');},
+  saltoYes:()=>{const r=saltarUniverso(S);if(!r)return closeModal();
+    closeModal();portalAnim();snd('trophy');
+    S=r.N;Scene.ents={};Scene.trucks=[];Scene.parts=[];RK.ultimoEnvio=0;
+    log(`Bem-vindo ao Universo ${uniDe(S)}: ${nomeUni(uniDe(S))}! Você trouxe ${r.ganho} patentes.`,'gold');
+    tab='progresso';sig='';save();enviarRanking(true);
+    setTimeout(()=>{openModal(`<div class="brand">Universo ${uniDe(S)}</div><h2>Bem-vindo a ${nomeUni(uniDe(S))}!</h2>
+      <p class="muted">Você chegou com <b class="gold">${S.meta.pat} ${S.meta.pat===1?'patente':'patentes'}</b> para gastar em tecnologias. Elas valem para sempre. Depois, é só reconstruir a fábrica, agora mais forte.</p>
+      <button class="btn wide" data-act="close">Ver tecnologias</button>`,'help');},RM?60:1500);},
+  joinRank:()=>{const v=($('#apelidoInput').value||'').replace(/[<>]/g,'').trim().slice(0,20);if(!v){toast('Escreva um apelido para entrar no ranking.','warn');return;}
+    JOG.apelido=v;saveJog();RK.trocando=false;toast('Você entrou no ranking!','good');
+    enviarRanking(true).then(ok=>{if(!ok)toast('Não consegui enviar sua pontuação agora. Tento de novo sozinho.','warn');RK.quando=0;carregarRanking();});},
+  trocarApelido:()=>{RK.trocando=true;},
+  cancelApelido:()=>{RK.trocando=false;},
+  rankRefresh:()=>{carregarRanking();},
+  rankSend:()=>{enviarRanking(true).then(ok=>{toast(ok?'Pontuação enviada!':'Não consegui enviar agora. Confira a internet.',ok?'good':'warn');if(ok){RK.quando=0;carregarRanking();}});},
   auditAns:i=>{if(audit.picked!==null)return;audit.picked=+i;snd(audit.ans[+i].right?'coin':'bad');renderAudit();},
   auditEnd:pts=>{pts=+pts;S.auds.push({dia:dayOf(S.t),pts});
     if(pts>=5){S.rep=clamp(S.rep+20,0,100);S.cash+=20000;log(`Auditor aprovou a fábrica (${pts} de 6)! +R$ 20.000.`,'gold');snd('trophy');}
     else if(pts>=3)log(`Passou raspando na auditoria (${pts} de 6).`,'warn');
     else{S.rep=clamp(S.rep-40,0,100);S.cash-=15000;log(`Reprovado na auditoria (${pts} de 6).`,'bad');}
     S.audPending=false;S.nextAud=dayOf(S.t)+7;audit=null;closeModal();save();},
-  reset:()=>confirmModal('Tudo deste aparelho será apagado: prensas, equipe, caixa e troféus.','resetYes','','Apagar tudo'),
-  resetYes:()=>{try{localStorage.removeItem(KEY);}catch(e){}S=null;Scene.ents={};closeModal();tab='fabrica';showStart();},
-  restart:()=>{try{localStorage.removeItem(KEY);}catch(e){}S=null;Scene.ents={};closeModal();tab='fabrica';showStart();}
+  reset:()=>confirmModal('Tudo deste aparelho será apagado: prensas, equipe, caixa, troféus, patentes, tecnologias e universos. Seu lugar no ranking continua com o faturamento que já foi enviado.','resetYes','','Apagar tudo'),
+  resetYes:()=>{try{localStorage.removeItem(KEY);localStorage.removeItem(KEY_OLD);}catch(e){}S=null;Scene.ents={};closeModal();tab='fabrica';showStart();},
+  restart:()=>{const meta=S&&S.meta,nome=S&&S.nome;Scene.ents={};closeModal();tab='fabrica';
+    if(meta&&(meta.uni>1||meta.patTot>0)){S=newState(nome,meta);S.tro=[];log(`A fábrica reabriu no Universo ${meta.uni}. Suas tecnologias continuam valendo.`,'gold');save();}
+    else{try{localStorage.removeItem(KEY);}catch(e){}S=null;showStart();}}
 };
 document.addEventListener('click',e=>{
   const b=e.target.closest('button[data-act]');if(!b||b.disabled)return;
@@ -1225,27 +1434,30 @@ document.addEventListener('change',e=>{
 document.addEventListener('keydown',e=>{
   if(e.key==='Escape'&&['confirm','press','staff','buy','help'].includes(modal))closeModal();
   if(e.key==='Enter'&&modal==='start'&&e.target.id==='plantInput')ACT.start();
+  if(e.key==='Enter'&&e.target.id==='apelidoInput'){ACT.joinRank();sig='';}
 });
 $('#modal').addEventListener('click',e=>{if(e.target.id==='modal'&&['press','staff','buy','help'].includes(modal))closeModal();});
 
 // ---------- laço principal ----------
-let lastT=performance.now(),lastDraw=0,lastPort=0;
+let lastT=performance.now(),lastDraw=0,lastPort=0,lastRank=performance.now()-90000;
 function loop(now){
   let real=(now-lastT)/1000;lastT=now;real=clamp(real,0,0.5);
   if(S){
-    if(!S.over&&S.speed>0&&!S.audPending&&!['audit','start','over'].includes(modal)){
+    if(!S.over&&S.speed>0&&!S.audPending&&!['audit','start','over','confirm'].includes(modal)){
       let g=real*4*S.speed;
       while(g>1e-9){const st=Math.min(2,g);simStep(S,st,ev);g-=st;if(S.audPending)break;}
-      checkMissions();
+      checkMissions();checkNivel();
       if(S.cash<BANKRUPT)S.over=true;
     }
     if(!['audit','over','start'].includes(modal)){if(S.over){closeModal();showOver();}else if(S.audPending){closeModal();showAudit();}}
     const s=signature();
-    const selFocus=document.activeElement&&document.activeElement.tagName==='SELECT';
+    const selFocus=document.activeElement&&['SELECT','INPUT'].includes(document.activeElement.tagName);
     if(s!==sig&&!selFocus){sig=s;render();}else updateLive();
     if(tab==='fabrica'&&sceneEl.isConnected){sceneUpdate(now,real);if(now-lastDraw>(RM?500:60)){sceneDraw(sceneCv,now);lastDraw=now;}}
     if(now-lastPort>(RM?1000:120)){drawPortraits(now);lastPort=now;}
     if(now-lastSave>3000){save();lastSave=now;}
+    if(tab==='progresso')drawPortal(now);
+    if(now-lastRank>120000){lastRank=now;enviarRanking(false);if(tab==='ranking')carregarRanking();}
   }
   requestAnimationFrame(loop);
 }
