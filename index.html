@@ -814,6 +814,7 @@ function loadSave(){try{
 const JOG_KEY='gdp-jogador';
 let JOG={pid:null,apelido:''};
 try{JOG=Object.assign(JOG,JSON.parse(localStorage.getItem(JOG_KEY)||'{}'));}catch(e){}
+const limparApelido=v=>String(v||'').replace(/[<>]/g,'').trim().slice(0,20);
 function saveJog(){try{localStorage.setItem(JOG_KEY,JSON.stringify(JOG));}catch(e){}}
 if(!JOG.pid){JOG.pid=(window.crypto&&crypto.randomUUID)?crypto.randomUUID():Date.now().toString(36)+Math.random().toString(36).slice(2)+Math.random().toString(36).slice(2);saveJog();}
 const fnv=s=>{let h=0x811c9dc5;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,0x01000193)>>>0;}return ('0000000'+h.toString(16)).slice(-8);};
@@ -1043,9 +1044,12 @@ function confirmModal(txt,act,arg,label){
 function showStart(){
   openModal(`<div class="brand">Golpe de Prensa</div><h2>Bem-vindo, gerente!</h2>
   <p class="muted">Você acabou de assumir uma estamparia com uma prensa de 400 t, um operador e ${brl(120000)} no caixa. Pegue pedidos, contrate gente boa, compre prensas maiores e faça essa fábrica crescer.</p>
+  ${rankLigado()?`<label for="playerInput">Seu nome no ranking</label>
+  <input type="text" id="playerInput" maxlength="20" placeholder="Ex.: Rei da Prensa" autocomplete="off" value="${esc(JOG.apelido||'')}">`:''}
   <label for="plantInput">Como se chama a sua fábrica?</label>
   <input type="text" id="plantInput" maxlength="40" placeholder="Estamparia Aço Norte" autocomplete="off">
-  <button class="btn wide" data-act="start">Abrir a fábrica</button>`,'start');
+  <button class="btn wide" data-act="start">Abrir a fábrica</button>
+  ${rankLigado()?'<p class="tiny">Você entra no ranking automaticamente. Dá para trocar o nome depois na aba Ranking.</p>':''}`,'start');
 }
 function showHelp(){
   openModal(`<h2>Como jogar</h2>
@@ -1325,17 +1329,18 @@ function vProgresso(){
 }
 function vRanking(){
   if(!rankLigado())return `<section class="panel"><h2>Ranking</h2><p class="muted">O ranking online ainda não está ligado nesta cópia do jogo. Quem publicou o jogo precisa colar o endereço da planilha do ranking no começo do arquivo, como explica o guia.</p></section>`;
-  if(!JOG.apelido||RK.trocando)return `<section class="panel"><h2>${RK.trocando?'Trocar apelido':'Entre no ranking'}</h2>
-    <p class="muted">Escolha um apelido. Todo mundo que joga vai ver o apelido, o nome da sua fábrica, o universo, o nível e o faturamento.</p>
-    <label for="apelidoInput">Apelido</label><input type="text" id="apelidoInput" maxlength="20" autocomplete="off" placeholder="Ex.: Rei da Prensa" value="${esc(JOG.apelido||'')}">
-    <div class="row wrap"><button class="btn" data-act="joinRank">${RK.trocando?'Salvar apelido':'Entrar no ranking'}</button>${RK.trocando?'<button class="btn ghost" data-act="cancelApelido">Cancelar</button>':''}</div></section>`;
+  if(!JOG.apelido){JOG.apelido=limparApelido(S.nome)||'Gerente';saveJog();enviarRanking(true);}
+  if(RK.trocando)return `<section class="panel"><h2>Trocar nome no ranking</h2>
+    <p class="muted">Todo mundo que joga vê esse nome, junto com o nome da sua fábrica, o universo, o nível e o faturamento.</p>
+    <label for="apelidoInput">Nome no ranking</label><input type="text" id="apelidoInput" maxlength="20" autocomplete="off" placeholder="Ex.: Rei da Prensa" value="${esc(JOG.apelido||'')}">
+    <div class="row wrap"><button class="btn" data-act="joinRank">Salvar nome</button><button class="btn ghost" data-act="cancelApelido">Cancelar</button></div></section>`;
   const me=fnv(JOG.pid);
   const pos=RK.lista?RK.lista.findIndex(r=>r.h===me):-1;
   const rows=(RK.lista||[]).map((r,i)=>`<tr class="${r.h===me?'me':''}"><td class="r pos p${i+1}">${i+1}º</td><td><b>${esc(r.apelido)}</b><span class="tiny fab">${esc(r.fabrica)}</span></td><td class="r">${r.universo}</td><td class="r">${r.nivel}</td><td class="r">${brl(r.faturamento)}</td></tr>`).join('');
   return `<section class="panel"><div class="phead"><h2>Ranking</h2><span class="tiny">${RK.quando?`Atualizado às ${new Date(RK.quando).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}`:''}</span></div>
     <p class="muted">Quem faturou mais somando todos os universos fica no topo. Sua pontuação é enviada sozinha enquanto você joga.</p>
     <div class="row wrap between"><span>Você joga como <b class="gold">${esc(JOG.apelido)}</b>${pos>=0?`, em <b>${pos+1}º lugar</b> de ${RK.total}`:''}.</span>
-      <span class="row wrap"><button class="btn sm" data-act="rankSend">Enviar agora</button><button class="btn sm ghost" data-act="rankRefresh">${RK.carregando?'Atualizando…':'Atualizar'}</button><button class="btn sm ghost" data-act="trocarApelido">Trocar apelido</button></span></div>
+      <span class="row wrap"><button class="btn sm" data-act="rankSend">Enviar agora</button><button class="btn sm ghost" data-act="rankRefresh">${RK.carregando?'Atualizando…':'Atualizar'}</button><button class="btn sm ghost" data-act="trocarApelido">Trocar nome</button></span></div>
     ${RK.erro?`<p class="bad">${RK.erro}</p>`:''}
     ${RK.lista?(rows?`<div class="tbl"><table class="rank"><thead><tr><th class="r">#</th><th>Jogador</th><th class="r">Universo</th><th class="r">Nível</th><th class="r">Faturamento total</th></tr></thead><tbody>${rows}</tbody></table></div>`:'<p class="empty">Ninguém no ranking ainda. Seja o primeiro: toque em Enviar agora.</p>')
       :RK.carregando?'<p class="empty">Buscando o ranking…</p>':''}
@@ -1361,6 +1366,9 @@ const ACT={
   close:()=>closeModal(),
   staff:id=>showStaff(id),
   start:()=>{const n=($('#plantInput').value||'').trim();S=newState(n||'Estamparia Aço Norte',novaMeta());S.speed=1;S.tro=[];
+    const pi=$('#playerInput');const ap=limparApelido(pi?pi.value:'')||JOG.apelido||limparApelido(S.nome);
+    if(ap&&ap!==JOG.apelido){JOG.apelido=ap;saveJog();}
+    setTimeout(()=>enviarRanking(true),300);
     log('A fábrica abriu as portas! Aceite o primeiro pedido na aba Pedidos.','gold');closeModal();snd('buy');save();},
   accept:id=>{const o=S.board.find(x=>x.id===id);if(!o)return;acceptOrder(S,o);snd('click');log(`Pedido aceito: ${num(o.qtd)} peças para a ${o.cli}.`);toast('Pedido aceito! A prensa já vai ligar.','good');},
   buy:k=>{const P=PRESSES[k];if(S.cash<P.preco||S.press.length>=MAX_PRESSES)return;S.cash-=P.preco;const p=addPress(S,k);autoAssign(S);snd('buy');
@@ -1394,8 +1402,8 @@ const ACT={
     setTimeout(()=>{openModal(`<div class="brand">Universo ${uniDe(S)}</div><h2>Bem-vindo a ${nomeUni(uniDe(S))}!</h2>
       <p class="muted">Você chegou com <b class="gold">${S.meta.pat} ${S.meta.pat===1?'patente':'patentes'}</b> para gastar em tecnologias. Elas valem para sempre. Depois, é só reconstruir a fábrica, agora mais forte.</p>
       <button class="btn wide" data-act="close">Ver tecnologias</button>`,'help');},RM?60:1500);},
-  joinRank:()=>{const v=($('#apelidoInput').value||'').replace(/[<>]/g,'').trim().slice(0,20);if(!v){toast('Escreva um apelido para entrar no ranking.','warn');return;}
-    JOG.apelido=v;saveJog();RK.trocando=false;toast('Você entrou no ranking!','good');
+  joinRank:()=>{const v=limparApelido($('#apelidoInput').value);if(!v){toast('Escreva um nome para aparecer no ranking.','warn');return;}
+    JOG.apelido=v;saveJog();RK.trocando=false;toast('Nome salvo no ranking!','good');
     enviarRanking(true).then(ok=>{if(!ok)toast('Não consegui enviar sua pontuação agora. Tento de novo sozinho.','warn');RK.quando=0;carregarRanking();});},
   trocarApelido:()=>{RK.trocando=true;},
   cancelApelido:()=>{RK.trocando=false;},
@@ -1433,12 +1441,15 @@ document.addEventListener('change',e=>{
 });
 document.addEventListener('keydown',e=>{
   if(e.key==='Escape'&&['confirm','press','staff','buy','help'].includes(modal))closeModal();
-  if(e.key==='Enter'&&modal==='start'&&e.target.id==='plantInput')ACT.start();
+  if(e.key==='Enter'&&modal==='start'&&(e.target.id==='plantInput'||e.target.id==='playerInput'))ACT.start();
   if(e.key==='Enter'&&e.target.id==='apelidoInput'){ACT.joinRank();sig='';}
 });
 $('#modal').addEventListener('click',e=>{if(e.target.id==='modal'&&['press','staff','buy','help'].includes(modal))closeModal();});
 
 // ---------- laço principal ----------
+let pressing=false;
+document.addEventListener('pointerdown',()=>{pressing=true;},true);
+['pointerup','pointercancel'].forEach(t=>document.addEventListener(t,()=>setTimeout(()=>{pressing=false;},0),true));
 let lastT=performance.now(),lastDraw=0,lastPort=0,lastRank=performance.now()-90000;
 function loop(now){
   let real=(now-lastT)/1000;lastT=now;real=clamp(real,0,0.5);
@@ -1452,7 +1463,7 @@ function loop(now){
     if(!['audit','over','start'].includes(modal)){if(S.over){closeModal();showOver();}else if(S.audPending){closeModal();showAudit();}}
     const s=signature();
     const selFocus=document.activeElement&&['SELECT','INPUT'].includes(document.activeElement.tagName);
-    if(s!==sig&&!selFocus){sig=s;render();}else updateLive();
+    if(s!==sig&&!selFocus&&!pressing){sig=s;render();}else updateLive();
     if(tab==='fabrica'&&sceneEl.isConnected){sceneUpdate(now,real);if(now-lastDraw>(RM?500:60)){sceneDraw(sceneCv,now);lastDraw=now;}}
     if(now-lastPort>(RM?1000:120)){drawPortraits(now);lastPort=now;}
     if(now-lastSave>3000){save();lastSave=now;}
@@ -1463,7 +1474,10 @@ function loop(now){
 }
 document.addEventListener('visibilitychange',()=>{if(document.hidden)save();});
 S=loadSave();
-if(S){render();}else showStart();
+if(S){
+  if(rankLigado()&&!JOG.apelido){JOG.apelido=limparApelido(S.nome)||'Gerente';saveJog();}
+  render();setTimeout(()=>enviarRanking(true),1500);
+}else showStart();
 requestAnimationFrame(t=>{lastT=t;loop(t);});
 
 </script>
