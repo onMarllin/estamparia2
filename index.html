@@ -15,7 +15,7 @@
 [hidden]{display:none!important}
 body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:17px;line-height:1.4;-webkit-tap-highlight-color:transparent}
 body.locked{overflow:hidden}
-.page{max-width:1080px;margin:0 auto;padding-inline:16px;padding-block:0 48px}
+.page{max-width:1320px;margin:0 auto;padding-inline:16px;padding-block:0 48px}
 canvas.px{image-rendering:pixelated;image-rendering:crisp-edges;display:block}
 h1,h2,h3{text-wrap:balance;margin:0}
 h2{font-size:20px;font-weight:700}
@@ -110,8 +110,29 @@ button:focus-visible,select:focus-visible,input:focus-visible,canvas:focus-visib
 select,input[type=text]{font:inherit;font-size:15px;color:var(--text);background:var(--panel);border:2px solid var(--line);padding:5px 8px;width:100%;min-width:0}
 
 /* ---------- chão de fábrica ---------- */
-.floor{display:grid;grid-template-columns:minmax(0,640px) minmax(0,1fr);gap:14px;align-items:start;margin-top:14px}
-.scene{position:relative;border:3px solid var(--edge);box-shadow:0 0 0 2px var(--line);background:#2a3038;width:100%}
+.floor{display:grid;grid-template-columns:auto 340px;justify-content:center;gap:14px;align-items:start;margin-top:14px}
+.scenecol{min-width:0}
+/* a cena ocupa a largura disponível, mas nunca passa da altura da tela */
+.scene{position:relative;border:3px solid var(--edge);box-shadow:0 0 0 2px var(--line);background:#2a3038;width:min(calc(100vw - 400px),calc(1320px - 400px),max(600px,calc((100vh - 200px) * 1.136)))}
+.side{display:flex;flex-direction:column;gap:12px;min-height:0}
+.side .panel{margin-top:0}
+.teambox{flex:0 1 auto;gap:8px;overflow-y:auto;min-height:0;scrollbar-width:thin;scrollbar-color:#4a5563 transparent}
+.linkbtn{font:inherit;font-size:13px;color:var(--yel);background:none;border:0;padding:0;cursor:pointer;text-decoration:underline}
+.roles{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.rtile{background:var(--panel2);border:2px solid var(--edge);padding:5px 6px;display:flex;flex-direction:column;gap:4px;min-width:0}
+.rth{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--muted)}
+.rth .rn{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rth b{color:var(--text);font-family:var(--display);font-size:12px}
+.faces{display:flex;flex-wrap:wrap;gap:3px}
+.faces button{background:#2a3038;border:1px solid var(--edge);padding:0;cursor:pointer;line-height:0}
+.faces canvas{width:20px;height:32px}
+.faces .more{font:inherit;font-size:12px;color:var(--text);width:22px;height:34px;line-height:1}
+.feedbox{flex:1 1 0;min-height:140px;overflow:hidden}
+.feedbox .feed{overflow-y:auto;min-height:0;padding-right:4px;overscroll-behavior:contain}
+.feedbox .feed{scrollbar-width:thin;scrollbar-color:#4a5563 transparent}
+.grid.tight{grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:8px}
+.grid.tight .card{padding:9px;gap:6px}
+.grid.tight .portrait{width:44px;height:70px}
 .scene canvas{width:100%;height:auto;cursor:pointer}
 .scene .ov{position:absolute;inset:0;pointer-events:none;overflow:hidden}
 .scene .lab{position:absolute;font-family:var(--display);font-size:10px;color:#e9edf0;text-shadow:1px 1px 0 #0a0d10;transform:translate(0,-2px);white-space:nowrap}
@@ -127,6 +148,15 @@ select,input[type=text]{font:inherit;font-size:15px;color:var(--text);background
 .feed time{font-variant-numeric:tabular-nums;color:var(--muted);font-size:13px;padding-top:2px}
 .feed li.bad span{color:var(--red)}.feed li.good span{color:var(--green)}.feed li.warn span{color:var(--orange)}.feed li.info span{color:var(--blue)}.feed li.gold span{color:var(--yel)}
 .team{display:flex;flex-wrap:wrap;gap:6px}
+.teamg{display:flex;flex-direction:column;gap:4px}
+.teamg .team{margin-bottom:6px}
+.teamg .tl{font-size:14px;color:var(--muted);display:flex;align-items:center;gap:6px;white-space:nowrap}
+.teamg .tl b{color:var(--text)}
+.sw{display:inline-block;width:12px;height:12px;border:2px solid var(--edge);flex:none}
+.grp{display:flex;flex-direction:column;gap:8px;margin-top:6px}
+.grph{display:flex;align-items:center;flex-wrap:wrap;gap:6px 10px;font-size:17px;border-bottom:2px dashed var(--line);padding-bottom:6px}
+.grph .cnt{font-family:var(--display);font-size:12px;color:var(--btnText);background:var(--yel);padding:1px 6px}
+.grph .tiny{font-weight:400}
 .team button{background:var(--panel2);border:2px solid var(--edge);padding:2px;cursor:pointer}
 .team canvas{width:30px;height:48px}
 
@@ -187,7 +217,7 @@ summary{cursor:pointer;color:var(--yel);font-weight:600}
 .toast.good{box-shadow:inset 0 0 0 2px var(--green)}.toast.bad{box-shadow:inset 0 0 0 2px var(--red)}.toast.warn{box-shadow:inset 0 0 0 2px var(--orange)}.toast.gold{box-shadow:inset 0 0 0 2px var(--yel);color:var(--yel)}
 @keyframes pop{from{transform:translateY(8px);opacity:0}to{transform:none;opacity:1}}
 
-@media (max-width:860px){.floor{grid-template-columns:1fr}}
+@media (max-width:900px){.floor{grid-template-columns:1fr;justify-content:stretch}.scene{width:100%}.side{height:auto!important}.feedbox .feed{max-height:300px}.roles{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}}
 @media (max-width:640px){
   body{font-size:16px}
   .tabs{gap:4px}
@@ -1329,18 +1359,30 @@ function render(){
   const v=$('#view');
   v.innerHTML=tab==='fabrica'?vFabrica():tab==='pedidos'?vPedidos():tab==='equipe'?vEquipe():tab==='painel'?vPainel():tab==='ranking'?vRanking():vProgresso();
   if(tab==='ranking'&&rankLigado()&&!RK.carregando&&Date.now()-RK.quando>60000)carregarRanking();
-  if(tab==='fabrica'){$('#sceneSlot').appendChild(sceneEl);sceneLabels();}
+  if(tab==='fabrica'){$('#sceneSlot').appendChild(sceneEl);sceneLabels();syncSide();}
   updateLive();drawPortraits(performance.now());
 }
+const ROLE_CURTO={operador:'Operadores',preparador:'Preparadores',empilhadeira:'Empilhadeira',lider:'Líderes',inspetor:'Inspetores',tecnico:'Técnicos',metrologista:'Metrologia'};
 function vFabrica(){
-  const lg=S.log.slice(0,9).map(l=>`<li class="${l.k}"><time>D${dayOf(l.t)} ${hhmm(l.t)}</time><span>${esc(l.txt)}</span></li>`).join('');
-  const roster=S.staff.map(s=>`<button data-act="staff" data-arg="${s.id}" title="${esc(s.nome)}, ${ROLES[s.role].nome.toLowerCase()}"><canvas class="px" data-portrait="${s.id}" width="12" height="19" style="width:30px;height:48px"></canvas></button>`).join('');
+  const lg=S.log.slice(0,30).map(l=>`<li class="${l.k}"><time>D${dayOf(l.t)} ${hhmm(l.t)}</time><span>${esc(l.txt)}</span></li>`).join('');
+  const tiles=ROLE_ORDER.map(r=>{const ms=S.staff.filter(s=>s.role===r).sort((a,b)=>b.lv-a.lv);if(!ms.length)return '';
+    const max=6,mostra=ms.slice(0,max);
+    return `<div class="rtile"><div class="rth"><span class="sw" style="background:${(LOOK[r]||{}).sh||'#999'}"></span><span class="rn">${ROLE_CURTO[r]||ROLES[r].pl}</span><b>${ms.length}</b></div>
+      <div class="faces">${mostra.map(s=>`<button data-act="staff" data-arg="${s.id}" title="${esc(s.nome)}, nível ${s.lv}"><canvas class="px" data-portrait="${s.id}" width="12" height="19"></canvas></button>`).join('')}${ms.length>max?`<button class="more" data-act="tab" data-arg="equipe">+${ms.length-max}</button>`:''}</div></div>`;}).join('');
   return `<div class="floor">
-    <div><div id="sceneSlot"></div><p class="hint">Toque numa prensa ou numa pessoa para ver detalhes.</p></div>
-    <div class="panel" style="margin-top:0"><div class="phead"><h2>Sua equipe</h2><span class="tiny">${S.staff.length} pessoas</span></div><div class="team">${roster}</div>
-      <h2>O que está rolando</h2>${lg?`<ul class="feed">${lg}</ul>`:'<p class="empty">Tudo quieto. Aceite um pedido para ligar a prensa.</p>'}</div>
+    <div class="scenecol"><div id="sceneSlot"></div><p class="hint">Toque numa prensa ou numa pessoa para ver detalhes.</p></div>
+    <div class="side" id="side">
+      <section class="panel teambox"><div class="phead"><h2>Equipe</h2><button class="linkbtn" data-act="tab" data-arg="equipe">${S.staff.length} pessoas, ver todos</button></div><div class="roles">${tiles}</div></section>
+      <section class="panel feedbox"><h2>O que está rolando</h2>${lg?`<ul class="feed">${lg}</ul>`:'<p class="empty">Tudo quieto. Aceite um pedido para ligar a prensa.</p>'}</section>
+    </div>
   </div>`;
 }
+function syncSide(){
+  const side=document.getElementById('side');if(!side)return;
+  side.style.height=innerWidth>900&&sceneEl.isConnected?sceneEl.offsetHeight+'px':'';
+}
+addEventListener('resize',syncSide);
+if(window.ResizeObserver)new ResizeObserver(syncSide).observe(sceneEl);
 function vPedidos(){
   const maxT=Math.max(0,...S.press.map(p=>PRESSES[p.tipo].t));
   const act=S.orders.map(o=>{const pr=o.press?pressById(o.press):null;const part=partById(o.part);
@@ -1360,7 +1402,7 @@ function vEquipe(){
   const card=(s,cand)=>`<div class="card"><div class="person"><canvas class="px portrait" data-portrait="${s.id}" width="12" height="19"></canvas>
     <div style="display:flex;flex-direction:column;gap:5px;min-width:0"><b>${esc(s.nome)}</b><div class="tiny">${ROLES[s.role].nome}</div><div class="row wrap"><span class="lvl">Nível ${s.lv}</span>${traitTag(s)}</div>
     <div class="tiny">${brl(salario(s))} por dia${cand?`, contratação ${brl(admissao(s))}`:''}</div></div></div>
-    ${cand?`<button class="btn wide" data-act="hire" data-arg="${s.id}" data-cost="${admissao(s)}">Contratar</button>`:`<button class="btn ghost wide" data-act="staff" data-arg="${s.id}">Ver ficha</button>`}</div>`;
+    ${cand?`<button class="btn sm wide" data-act="hire" data-arg="${s.id}" data-cost="${admissao(s)}">Contratar</button>`:`<button class="btn sm ghost wide" data-act="staff" data-arg="${s.id}">Ver ficha</button>`}</div>`;
   const E=effects(S),n=S.press.length;
   const gaps=[];
   if(S.press.some(p=>!p.op))gaps.push('tem prensa sem operador');
@@ -1371,10 +1413,24 @@ function vEquipe(){
   else if(S.staff.filter(s=>s.role==='empilhadeira').length<Math.ceil(S.press.length/3))gaps.push('com tantas prensas, uma empilhadeira só vira fila de bobina');
   return `<section class="panel"><div class="phead"><h2>Currículos</h2><span class="tiny">Chegam novos todo dia. Com mais estrelas, aparece gente mais experiente.</span></div>
     ${gaps.length?`<p class="warn">Dica do RH: ${gaps.join('; ')}.</p>`:'<p class="good">Time bem montado!</p>'}
-    <div class="grid">${S.cands.map(c=>card(c,true)).join('')}</div></section>
-  <section class="panel"><div class="phead"><h2>Sua equipe</h2><span class="tiny">Folha: ${brl(S.staff.reduce((a,s)=>a+salario(s),0))} por dia</span></div>
-    <p class="muted">Inspetores e técnicos cobrem até 3 prensas cada; líderes, até 4. Todo mundo ganha experiência trabalhando.</p>
-    <div class="grid">${ROLE_ORDER.flatMap(r=>S.staff.filter(s=>s.role===r)).map(s=>card(s,false)).join('')}</div></section>`;
+    ${grupos(S.cands,true)}</section>
+  <section class="panel"><div class="phead"><h2>Sua equipe</h2><span class="tiny">${S.staff.length} pessoas. Folha: ${brl(S.staff.reduce((a,s)=>a+salario(s),0))} por dia</span></div>
+    ${grupos(S.staff,false)}</section>`;
+  function grupos(lista,cand){
+    return ROLE_ORDER.map(r=>{const ms=lista.filter(s=>s.role===r).sort((a,b)=>b.lv-a.lv||(b.trait==='craque')-(a.trait==='craque'));if(!ms.length)return '';
+      return `<div class="grp"><h3 class="grph"><span class="sw" style="background:${(LOOK[r]||{}).sh||'#999'}"></span>${ROLES[r].pl}<span class="cnt">${ms.length}</span>${cand?'':`<span class="tiny">${cobertura(r,ms.length)}</span>`}</h3>
+        <div class="grid tight">${ms.map(s=>card(s,cand)).join('')}</div></div>`;}).join('');
+  }
+  function cobertura(r,k){
+    if(r==='operador')return `${S.press.filter(p=>p.op).length} de ${n} prensas com operador`;
+    if(r==='preparador')return 'fazem os setups';
+    if(r==='empilhadeira')return `o ideal é 1 para cada 3 prensas (você tem ${n})`;
+    if(r==='lider')return `cobrem ${Math.round(E.L.cov*100)}% das prensas (até 4 cada)`;
+    if(r==='inspetor')return `cobrem ${Math.round(E.I.cov*100)}% das prensas (até 3 cada)`;
+    if(r==='tecnico')return `cobrem ${Math.round(E.T.cov*100)}% das prensas (até 3 cada)`;
+    if(r==='metrologista')return 'atende a fábrica toda';
+    return '';
+  }
 }
 function vPainel(){
   const y=S.days[S.days.length-1],o=OEE(y);
