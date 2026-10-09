@@ -75,7 +75,7 @@ table.rank tr.me td:first-child{box-shadow:inset 4px 0 0 var(--purple)}
 @keyframes portal{0%{opacity:0;transform:scale(.2)}35%{opacity:1;transform:scale(1)}70%{opacity:1;transform:scale(1.6)}100%{opacity:0;transform:scale(3)}}
 
 /* ---------- abas ---------- */
-.tabs{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;display:grid;grid-template-columns:repeat(6,1fr);gap:6px;background:var(--bg);padding:10px 0 8px;margin-top:4px}
+.tabs{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;display:grid;grid-template-columns:repeat(7,1fr);gap:6px;background:var(--bg);padding:10px 0 8px;margin-top:4px}
 .tabs button{font:inherit;font-size:15px;font-weight:600;color:var(--text);background:var(--panel);border:3px solid var(--edge);box-shadow:inset 0 -3px 0 var(--line);padding:8px 4px 10px;cursor:pointer;position:relative}
 .tabs button[aria-current="page"]{background:var(--yel);color:var(--btnText);box-shadow:inset 0 -3px 0 var(--btnSh)}
 .badge{position:absolute;top:-9px;right:-4px;background:var(--red);color:#fff;border:2px solid var(--edge);font-size:12px;min-width:22px;padding:0 4px}
@@ -130,6 +130,24 @@ select,input[type=text]{font:inherit;font-size:15px;color:var(--text);background
 .feedbox{flex:1 1 0;min-height:140px;overflow:hidden}
 .feedbox .feed{overflow-y:auto;min-height:0;padding-right:4px;overscroll-behavior:contain}
 .feedbox .feed{scrollbar-width:thin;scrollbar-color:#4a5563 transparent}
+.riscado{text-decoration:line-through}
+.card.owned{opacity:.7}
+.card.flash{border-color:#8a6f1e;box-shadow:inset 0 0 0 2px var(--yel)}
+.card.flash h3{font-size:19px}
+.panel.quiet{background:transparent;box-shadow:none;border-style:dashed;border-color:var(--line)}
+.card.urg{border-color:#8a6f1e;box-shadow:inset 0 0 0 2px var(--yel)}
+.pill.urgp{color:var(--red);font-weight:700;animation:blink2 1s steps(2) infinite}
+@keyframes blink2{50%{opacity:.55}}
+.urgtxt{font-size:14px;color:var(--yel)}
+.mcard{border-left:6px solid var(--c)}
+.streak{display:flex;gap:4px;flex-wrap:wrap}
+.streak i{font-style:normal;min-width:34px;height:30px;padding:0 4px;border:2px solid var(--edge);background:var(--panel2);display:flex;align-items:center;justify-content:center;font-family:var(--display);font-size:12px;color:var(--muted)}
+.streak i.gem{color:var(--purple)}
+.streak i.on{background:var(--yel);color:var(--btnText)}
+.big3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:0}
+.big3 div{background:var(--panel2);border:3px solid var(--edge);padding:8px 10px;min-width:0}
+.big3 dt{font-size:13px;color:var(--muted)}
+.big3 dd{margin:0;font-family:var(--display);font-size:clamp(12px,3.4vw,20px);font-variant-numeric:tabular-nums;white-space:nowrap}
 .grid.tight{grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:8px}
 .grid.tight .card{padding:9px;gap:6px}
 .grid.tight .portrait{width:44px;height:70px}
@@ -221,6 +239,7 @@ summary{cursor:pointer;color:var(--yel);font-weight:600}
 @media (max-width:640px){
   body{font-size:16px}
   .tabs{gap:4px}
+  .tabs{grid-template-columns:repeat(4,1fr);row-gap:8px}
   .tabs button{font-size:12px;padding:7px 1px 9px}
   .lvbar{width:100px}
   .portalrow{grid-template-columns:1fr}.portalrow canvas{width:64px;height:64px}
@@ -264,6 +283,7 @@ summary{cursor:pointer;color:var(--yel);font-weight:600}
   <button data-act="tab" data-arg="fabrica">Fábrica<span class="badge" id="b-fab" hidden></span></button>
   <button data-act="tab" data-arg="pedidos">Pedidos<span class="badge" id="b-ped" hidden></span></button>
   <button data-act="tab" data-arg="equipe">Equipe</button>
+  <button data-act="tab" data-arg="compras">Compras<span class="badge" id="b-comp" hidden></span></button>
   <button data-act="tab" data-arg="painel">Painel<span class="badge" id="b-pain" hidden></span></button>
   <button data-act="tab" data-arg="progresso">Progresso<span class="badge" id="b-tro" hidden></span></button>
   <button data-act="tab" data-arg="ranking">Ranking</button>
@@ -309,16 +329,43 @@ const ROLES={
   inspetor:{nome:'Inspetor de qualidade',pl:'Inspetores',sal:480,cob:3,desc:'Cada inspetor cobre até 3 prensas e segura peças com defeito antes de saírem para o cliente. Também acelera o 8D.'},
   tecnico:{nome:'Técnico de manutenção',pl:'Técnicos',sal:550,cob:3,desc:'Cada técnico cobre até 3 prensas: faz preventiva sozinho quando a condição cai e conserta quebras mais rápido.'},
   empilhadeira:{nome:'Operador de empilhadeira',pl:'Operadores de empilhadeira',sal:400,desc:'Traz a bobina do estoque até a prensa e leva o pedido pronto até a expedição. Sem ele, o operador da prensa vai a pé buscar a bobina e entregar o pedido, e a prensa fica parada bem mais tempo.'},
+  comprador:{nome:'Comprador',pl:'Compradores',sal:600,desc:'Negocia o aço mais barato, diminui atraso de fornecedor, abre o catálogo de fornecedores e encontra ofertas relâmpago.'},
   metrologista:{nome:'Metrologista',pl:'Metrologistas',sal:700,cob:99,desc:'Mantém os instrumentos calibrados e o MSA em dia. A inspeção fica mais confiável em toda a planta, e a auditoria cobra essa função.'}
 };
-const ROLE_ORDER=['operador','preparador','empilhadeira','lider','inspetor','tecnico','metrologista'];
+const ROLE_ORDER=['operador','preparador','empilhadeira','lider','inspetor','tecnico','metrologista','comprador'];
 // ---------- bobina, empilhadeira e expedição ----------
 const COIL={p400:6000,p600:4500,p800:3000};
-const coilSize=p=>COIL[p.tipo]||3000;
+const coilSize=(p,S)=>(COIL[p.tipo]||3000)*(S&&S.melh&&S.melh.jumbo?1.5:1);
 const WALK_COIL=60, WALK_EXP=35, THREAD=5;
-const forkDur=(s,kind)=>Math.max(5,(kind==='bobina'?11:9)*(1-0.06*(effLv(s)-1))*(s.trait==='rapido'?0.8:1));
+const forkDur=(s,kind,S)=>(S&&S.melh&&S.melh.eletrica?0.75:1)*Math.max(5,(kind==='bobina'?11:9)*(1-0.06*(effLv(s)-1))*(s.trait==='rapido'?0.8:1));
 const temEmpilhadeira=S=>S.staff.some(s=>s.role==='empilhadeira');
-const valorVenda=p=>Math.round(PRESSES[p.tipo].preco*0.6*(0.5+0.5*p.cond/100)/1000)*1000;
+const custoUpPrensa=p=>Math.round(PRESSES[p.tipo].preco*0.3*(p.lv||1)/1000)*1000;
+const MAX_LV_PRENSA=5;
+const valorVenda=p=>{let up=0;for(let l=1;l<(p.lv||1);l++)up+=Math.round(PRESSES[p.tipo].preco*0.3*l/1000)*1000;return Math.round((PRESSES[p.tipo].preco*0.6*(0.5+0.5*p.cond/100)+up*0.5)/1000)*1000;};
+const gpmEff=p=>PRESSES[p.tipo].gpm*(1+0.06*((p.lv||1)-1));
+// ---------- matrizes raras ----------
+const pct0=v=>Math.round(v*100)+'%';
+const RARIDADES=[{n:'Comum',c:'#c3cad1',v:0.05,venda:5000},{n:'Rara',c:'#55a3e6',v:0.10,venda:15000},{n:'Épica',c:'#b98ae6',v:0.18,venda:40000},{n:'Lendária',c:'#f2c230',v:0.30,venda:100000}];
+const MTIPOS={veloz:{nome:'Veloz',ef:v=>`+${pct0(v)} de cadência`},precisa:{nome:'de Precisão',ef:v=>`−${pct0(v)} de defeito`},agil:{nome:'de Troca Rápida',ef:v=>`−${pct0(v)} no tempo de setup`},robusta:{nome:'Robusta',ef:v=>`−${pct0(v)} de desgaste da prensa`}};
+const LENDAS=['Fênix','Tungstênio','Trovão','Diamante','Aurora','Titã','Cometa','Dragão'];
+const MAX_MATRIZES=40;
+function rollRaridade(S,min){const w=[60,28,10,2+(uniDe(S)-1)*1.5];for(let i=0;i<(min||0);i++)w[i]=0;let t=w.reduce((a,b)=>a+b,0),r=Math.random()*t;for(let i=0;i<4;i++){r-=w[i];if(r<=0)return i;}return 3;}
+function makeMatriz(S,min){
+  const r=rollRaridade(S,min),ks=Object.keys(MTIPOS),tipo=pick(ks);
+  const m={id:uid(),tipo,rar:r,v:RARIDADES[r].v};
+  if(r===3){m.lenda=pick(LENDAS);let t2;do{t2=pick(ks);}while(t2===tipo);m.tipo2=t2;m.v2=0.12;}
+  return m;
+}
+const nomeMatriz=m=>m.rar===3?`Matriz ${m.lenda}`:`Matriz ${MTIPOS[m.tipo].nome}`;
+const efeitoMatriz=m=>MTIPOS[m.tipo].ef(m.v)+(m.tipo2?` e ${MTIPOS[m.tipo2].ef(m.v2)}`:'');
+const matrizesDe=S=>(S.meta.mats=S.meta.mats||[]);
+const matrizDaPrensa=(S,p)=>p&&p.mat?matrizesDe(S).find(x=>x.id===p.mat)||null:null;
+function bonusMatriz(S,p,tipo){const m=matrizDaPrensa(S,p);if(!m)return 0;return (m.tipo===tipo?m.v:0)+(m.tipo2===tipo?m.v2:0);}
+function ganharMatriz(S,min,ev,origem){
+  const m=makeMatriz(S,min);
+  if(matrizesDe(S).length>=MAX_MATRIZES){const v=RARIDADES[m.rar].venda;S.cash+=v;ev('matriz',{m,vendida:v,origem});return m;}
+  matrizesDe(S).push(m);ev('matriz',{m,origem});return m;
+}
 const NOMES=['João','Maria','José','Ana','Francisco','Antônia','Carlos','Francisca','Paulo','Adriana','Pedro','Juliana','Lucas','Márcia','Luiz','Fernanda','Marcos','Patrícia','Rafael','Aline','Severino','Josefa','Raimundo','Luciana','Daniel','Cícera','Tiago','Rita','Edson','Bruna','Gilberto','Sônia','Wellington','Débora','Reginaldo','Priscila'];
 const SOBRE=['Silva','Santos','Oliveira','Souza','Lima','Pereira','Ferreira','Costa','Rodrigues','Almeida','Nascimento','Araújo','Barbosa','Cavalcanti','Melo'];
 
@@ -343,9 +390,10 @@ const TECHS={
   preditiva:{nome:'Manutenção preditiva',desc:'Prensas quebram 10% menos por nível.',max:5,custo:l=>2+l},
   olheiro:{nome:'Olheiro de talentos',desc:'+5% de chance de aparecer Craque no RH, por nível.',max:4,custo:l=>2+l},
   escola:{nome:'Escola técnica',desc:'Todo mundo contratado já chega com +1 nível, por nível.',max:3,custo:l=>[2,5,9][l]},
+  noturno:{nome:'Turno da noite',desc:'A fábrica produz por mais 2 h enquanto você está fora, por nível (começa com 4 h).',max:4,custo:l=>2+l},
   galpao:{nome:'Galpão equipado',desc:'Começa com prensas extras já com operador: nível 1 ganha uma de 400 t, nível 2 uma de 600 t, nível 3 uma de 800 t.',max:3,custo:l=>[3,6,10][l]}
 };
-const TECH_ORDER=['capital','contrato','smed','fama','aco','preditiva','olheiro','escola','galpao'];
+const TECH_ORDER=['capital','contrato','smed','fama','aco','preditiva','olheiro','escola','noturno','galpao'];
 const NIVEL_SALTO=10, LVK=25000;
 const tec=(S,k)=>(S&&S.meta&&S.meta.ups&&S.meta.ups[k])||0;
 const uniDe=S=>(S&&S.meta&&S.meta.uni)||1;
@@ -411,7 +459,7 @@ function stepPress(S,p,dt,E,ev){
       const use=Math.min(dt,p.rem); p.rem-=use; dt-=use;
       if(o){d.plan+=use; d.loss[{setup:'setup',broken:'brk',pm:'pm',nomat:'mat',exped:'log'}[p.st]]=(d.loss[{setup:'setup',broken:'brk',pm:'pm',nomat:'mat',exped:'log'}[p.st]]||0)+use;}
       if(p.rem<=1e-6){
-        if(p.st==='nomat'){if(p.coilPending){p.coil=coilSize(p);p.coilPending=false;ev('bobina_fim',{p,walk:p.walk});}p.walk=false;p.atraso=false;}
+        if(p.st==='nomat'){if(p.coilPending){p.coil=coilSize(p,S);p.coilPending=false;ev('bobina_fim',{p,walk:p.walk});}p.walk=false;p.atraso=false;}
         if(p.st==='exped'){const eo=p.expOrder;p.expOrder=null;if(eo)deliver(S,eo,ev);}
         if(p.st==='setup'){p.part=p.setupPart; if(p.prep){S.prepBusy=S.prepBusy.filter(x=>x!==p.prep);p.prep=null;} ev('setup_fim',{p});}
         if(p.st==='pm'){p.cond=100;p.tec=null;ev('pm_fim',{p});}
@@ -427,7 +475,7 @@ function stepPress(S,p,dt,E,ev){
       const free=S.staff.filter(s=>s.role==='preparador'&&!S.prepBusy.includes(s.id)).sort((a,b)=>b.lv-a.lv)[0];
       if(free){p.prep=free.id;S.prepBusy.push(free.id);p.rem=Math.max(25,90-12*(effLv(free)-1)-(free.trait==='rapido'?15:0));}
       else{p.prep=null;p.rem=180;}
-      p.rem*=1-0.1*tec(S,'smed');
+      p.rem*=(1-0.1*tec(S,'smed'))*(1-bonusMatriz(S,p,'agil'))*(melh(S,'ponte')?0.85:1);
       p.st='setup';p.setupPart=o.part;p.setupTot=p.rem;
       continue;
     }
@@ -446,17 +494,18 @@ function stepPress(S,p,dt,E,ev){
     const part=partById(o.part);
     const ol=effLv(op), cap=op.trait==='caprichoso';
     const perf=Math.min(0.98,opPerf(ol)+E.lead+(op.trait==='rapido'?0.05:0));
-    const prod=PRESSES[p.tipo].gpm*perf*dt;
-    const defRate=S.def[o.part]*opDefMult(ol)*condDefMult(p.cond)*(cap?0.8:1);
+    const nominal=gpmEff(p)*(1+bonusMatriz(S,p,'veloz'));
+    const prod=nominal*perf*dt;
+    const defRate=S.def[o.part]*opDefMult(ol)*condDefMult(p.cond)*(cap?0.8:1)*(1-bonusMatriz(S,p,'precisa'));
     const gen=prod*defRate;
-    const det=1-(1-Math.min(0.9,opDet(ol)+(cap?0.05:0)))*(1-E.insp);
+    const det=1-(1-Math.min(0.9,opDet(ol)+(cap?0.05:0)))*(1-E.insp)*(melh(S,'camera')?0.7:1);
     const scrap=gen*det, esc=gen-scrap;
     o.good+=prod-scrap;o.esc+=esc;o.scrap+=scrap;
-    S.cash-=prod*part.mat;
-    p.cond=Math.max(0,p.cond-dt/40);
-    d.plan+=dt;d.run+=dt;d.prod+=prod;d.ideal+=PRESSES[p.tipo].gpm*dt;d.def+=gen;d.scrap+=scrap;d.esc+=esc;
+    S.cash-=prod*part.mat*fatorAco(S);
+    p.cond=Math.max(0,p.cond-dt/40*(1-0.05*((p.lv||1)-1))*(1-bonusMatriz(S,p,'robusta'))*(melh(S,'lubri')?0.85:1));
+    d.plan+=dt;d.run+=dt;d.prod+=prod;d.ideal+=nominal*dt;d.def+=gen;d.scrap+=scrap;d.esc+=esc;
     S.tot.prod+=prod;
-    p.coil=(p.coil??coilSize(p))-prod;
+    p.coil=(p.coil??coilSize(p,S))-prod;
     if(o.good>=o.qtd) finishOrder(S,p,o,ev);
     if(p.coil<=0&&p.st!=='exped'){p.coil=0;requestCoil(S,p,ev);}
     return;
@@ -478,7 +527,7 @@ function finishOrder(S,p,o,ev){
 function deliver(S,o,ev){
   const late=S.t>o.due;
   const ppm=o.esc/o.qtd*1e6;
-  const receita=o.qtd*o.preco*(late?0.9:1);
+  const receita=o.qtd*o.preco*(late?(o.esp?0.36:0.9):1);
   S.cash+=receita;S.tot.receita=(S.tot.receita||0)+receita;
   const comp=ppm>o.ppm;
   let custoRec=0;
@@ -489,6 +538,7 @@ function deliver(S,o,ev){
   if(S.hist.length>40) S.hist.shift();
   S.tot.ped++; if(!late)S.tot.noPrazo++;
   ev('entrega',{o,comp,late,ppm,receita,custoRec});
+  if(!late&&!comp&&(o.esp||Math.random()<0.15))ganharMatriz(S,o.esp?1:0,ev,o.esp?'urgente':'entrega');
 }
 function stepForks(S,dt,ev){
   S.ftasks=S.ftasks||[];S.fbusy=S.fbusy||{};
@@ -503,7 +553,7 @@ function stepForks(S,dt,ev){
     S.ftasks=[];return;
   }
   S.ftasks.sort((a,b)=>(a.kind==='bobina'?0:1)-(b.kind==='bobina'?0:1));
-  for(const f of forks){if(S.fbusy[f.id]||!S.ftasks.length)continue;const task=S.ftasks.shift();const d=forkDur(f,task.kind);S.fbusy[f.id]={task,rem:d,tot:d};}
+  for(const f of forks){if(S.fbusy[f.id]||!S.ftasks.length)continue;const task=S.ftasks.shift();const d=forkDur(f,task.kind,S);S.fbusy[f.id]={task,rem:d,tot:d};}
   for(const sid in S.fbusy){
     const b=S.fbusy[sid];b.rem-=dt;
     if(b.rem<=0){
@@ -550,21 +600,23 @@ function dayRollover(S,ev){
   for(const s of S.staff){
     const working=s.role!=='operador'||S.press.some(p=>p.op===s.id);
     if(!working) continue;
-    s.xp+=(1+(s.role==='operador'?E.leadXp:0))*(s.trait==='incansavel'?1.5:1);
+    s.xp+=(1+(s.role==='operador'?E.leadXp:0))*(s.trait==='incansavel'?1.5:1)*(melh(S,'clima')?1.2:1);
     while(s.lv<MAXLV&&s.xp>=xpNeed(s.lv)){s.xp-=xpNeed(s.lv);s.lv++;ups.push(s);}
     if(s.lv>=MAXLV) s.xp=0;
   }
   S.board=S.board.filter(o=>o.exp>S.t);
+  if(S.press.length&&Math.random()<0.4)S.board.unshift(makeUrgente(S));
   const want=Math.min(6,2+S.press.length);
   while(S.board.length<want) S.board.push(makeOrder(S));
   S.cands=makeCands(S);
   const lucro=S.cash-S.cashDay; S.cashDay=S.cash;
   ev('dia',{d,pay,ups,lucro});
   const running=S.press.filter(p=>p.st==='run');
-  if(running.length&&Math.random()<0.12){const p=pick(running);p.st='nomat';p.rem=rint(40,100);p.remTot=p.rem;p.atraso=true;ev('bobina',{p});}
+  if(compradorLv(S)&&(!S.oferta||S.t>=S.oferta.ate)&&Math.random()<0.6){S.oferta=novaOferta(S);ev('oferta',{o:S.oferta});}
+  if(running.length&&Math.random()<0.12*(compradorLv(S)?0.4:1)){const p=pick(running);p.st='nomat';p.rem=rint(40,100);p.remTot=p.rem;p.atraso=true;ev('bobina',{p});}
 }
 function makeCands(S){
-  const roles=['operador','operador','operador','preparador','empilhadeira','empilhadeira','lider','inspetor','inspetor','tecnico','tecnico','metrologista'];
+  const roles=['operador','operador','operador','preparador','empilhadeira','empilhadeira','lider','inspetor','inspetor','tecnico','tecnico','metrologista','comprador'];
   const mx=Math.min(4,1+Math.floor(S.rep/25));
   const out=[makeStaff('operador',rint(1,mx),S)];
   while(out.length<6) out.push(makeStaff(pick(roles),rint(1,mx),S));
@@ -582,9 +634,119 @@ function step8D(S,ev){
     }
   }
 }
+// ---------- escritório: automações compradas com dinheiro, valem em todos os universos ----------
+const AUTOS={
+  pcp:{nome:'PCP automático',preco:60000,desc:'Aceita pedidos sozinho quando há prensa com tonelagem e capacidade livre, priorizando os urgentes. Evita clientes mais exigentes do que a sua qualidade aguenta.'},
+  rh:{nome:'RH automático',preco:80000,desc:'Contrata sozinho quando falta gente: operador para prensa vazia, inspetor e técnico para cobrir as prensas, preparador e empilhadeira. Só contrata se sobrar caixa.'},
+  qual:{nome:'Qualidade automática',preco:40000,desc:'Abre o 8D sozinha assim que chega uma reclamação de cliente.'}
+};
+const autoLigada=(S,k)=>!!(S.meta.auto&&S.meta.auto[k]&&S.meta.auto[k].on);
+const COST_8D_L=3000;
+function autoGerente(S,ev){
+  if(autoLigada(S,'pcp')){
+    const maxT=Math.max(0,...S.press.map(p=>PRESSES[p.tipo].t));
+    const l5=S.hist.slice(-5),q=l5.reduce((a,h)=>a+h.qtd,0),e=l5.reduce((a,h)=>a+h.esc,0);
+    const ppmAtual=q?e/q*1e6:0;
+    let g=0;
+    while(S.orders.length<S.press.length+(S.press.length>2?2:1)&&g++<6){
+      const c=S.board.filter(o=>partById(o.part).t<=maxT&&o.ppm>=ppmAtual*1.2).sort((a,b)=>(b.esp?1:0)-(a.esp?1:0)||b.qtd*b.preco-a.qtd*a.preco)[0];
+      if(!c)break;acceptOrder(S,c);ev('auto',{k:'pcp',txt:`PCP automático aceitou ${c.esp?'um pedido urgente':'um pedido'} da ${c.cli}.`});
+    }
+  }
+  if(autoLigada(S,'rh')){
+    const E=effects(S),n=S.press.length,cnt=r=>S.staff.filter(s=>s.role===r).length;
+    const falta=[];
+    if(S.press.some(p=>!p.op)&&!S.staff.some(s=>s.role==='operador'&&!S.press.some(p=>p.op===s.id)))falta.push('operador');
+    if(E.I.cov<1)falta.push('inspetor');
+    if(E.T.cov<1)falta.push('tecnico');
+    if(!cnt('preparador'))falta.push('preparador');
+    if(n>=2&&cnt('empilhadeira')<Math.ceil(n/3))falta.push('empilhadeira');
+    if(n>=2&&!cnt('metrologista'))falta.push('metrologista');
+    for(const r of falta){
+      const c=S.cands.filter(x=>x.role===r).sort((a,b)=>b.lv-a.lv)[0];
+      if(!c||S.cash<admissao(c)+40000)continue;
+      S.cash-=admissao(c);S.staff.push(c);S.cands=S.cands.filter(x=>x!==c);
+      if(r==='operador'){const p=S.press.find(x=>!x.op);if(p)p.op=c.id;}
+      ev('auto',{k:'rh',txt:`RH automático contratou ${c.nome} (${ROLES[r].nome.toLowerCase()}).`});
+    }
+    for(const p of S.press)if(!p.op){const f=S.staff.find(s=>s.role==='operador'&&!S.press.some(x=>x.op===s.id));if(f)p.op=f.id;}
+  }
+  if(autoLigada(S,'qual')){
+    const temI=S.staff.some(s=>s.role==='inspetor');
+    for(const c of S.comps)if(c.st==='aberta'&&S.cash>COST_8D_L+10000){S.cash-=COST_8D_L;c.st='8d';c.ini=S.t;c.fim=S.t+(temI?1:2)*DAY;ev('auto',{k:'qual',txt:`Qualidade automática abriu o 8D da ${c.cli}.`});}
+  }
+}
+// ---------- produção enquanto o jogador está fora ----------
+const OFF_RATE=0.4; // minutos de jogo por segundo real: 1 dia de fábrica por hora fora
+const horasOffline=S=>4+2*tec(S,'noturno');
+function fabricaParada(S){
+  return !S.orders.length&&!autoLigada(S,'pcp')&&S.press.every(p=>p.st==='idle'||p.st==='noop')&&!(S.ftasks||[]).length&&!Object.keys(S.fbusy||{}).length;
+}
+function simOffline(S,segundos){
+  const limite=horasOffline(S)*3600;
+  const seg=Math.min(segundos,limite);
+  const minutos=seg*OFF_RATE;
+  const R={segFora:segundos,segUsados:0,limitado:segundos>limite,receita:0,ped:0,comp:0,brk:0,ups:[],mats:[],dias:0,auto:0,motivo:null,cash0:S.cash,rec0:S.tot.receita||0};
+  const ev=(k,d)=>{
+    if(k==='entrega'){R.ped++;R.receita+=d.receita;if(d.comp)R.comp++;}
+    else if(k==='quebra')R.brk++;
+    else if(k==='matriz')R.mats.push(d.m);
+    else if(k==='auto')R.auto++;
+    else if(k==='dia'){R.dias++;R.ups.push(...d.ups);const last=S.days[S.days.length-1];if(last)last.lucro=d.lucro;if(dayOf(S.t)>=S.nextAud)S.audPending=true;}
+  };
+  let t=0;
+  while(t<minutos){
+    simStep(S,2,ev);t+=2;
+    if(S.audPending){R.motivo='auditoria';break;}
+    if(S.cash<-80000){R.motivo='caixa';break;}
+    if(t%30===0&&fabricaParada(S)){R.motivo='sem_pedidos';break;}
+  }
+  R.segUsados=t/OFF_RATE;R.minJogo=t;
+  return R;
+}
+// ---------- compras ----------
+const CATALOGO={
+  ponte:{nome:'Ponte rolante',preco:120000,desc:'Setup 15% mais rápido em todas as prensas.'},
+  jumbo:{nome:'Bobinas jumbo',preco:90000,desc:'Cada bobina rende 50% mais peças, então a troca acontece menos vezes.'},
+  lubri:{nome:'Lubrificação central',preco:100000,desc:'As prensas se desgastam 15% menos.'},
+  camera:{nome:'Câmera de inspeção automática',preco:150000,desc:'Segura 30% das peças ruins que escapariam da inspeção.'},
+  eletrica:{nome:'Empilhadeira elétrica',preco:80000,desc:'Bobina e expedição 25% mais rápidas.'},
+  clima:{nome:'Climatização do galpão',preco:70000,desc:'A equipe ganha experiência 20% mais rápido.'}
+};
+const CAT_ORDER=['ponte','jumbo','lubri','camera','eletrica','clima'];
+const melh=(S,k)=>!!(S.melh&&S.melh[k]);
+const compradorLv=S=>S.staff.filter(x=>x.role==='comprador').reduce((a,x)=>Math.max(a,effLv(x)),0);
+const descAco=S=>{const L=compradorLv(S);return L?Math.min(0.15,0.03+0.015*(L-1)):0;};
+const acoPromo=S=>S.acoPromo&&S.t<S.acoPromo.ate?S.acoPromo.desc:0;
+const fatorAco=S=>(1-descAco(S))*(1-acoPromo(S));
+const descCatalogo=S=>{const L=compradorLv(S);return L?Math.min(0.3,0.05*L):0;};
+const precoCatalogo=(S,k)=>{let p=CATALOGO[k].preco*(1-descCatalogo(S));if(S.oferta&&S.oferta.tipo==='catalogo'&&S.oferta.k===k&&S.t<S.oferta.ate)p*=1-S.oferta.desc;return Math.round(p/1000)*1000;};
+function comprarCatalogo(S,k){if(!compradorLv(S)||melh(S,k))return false;const p=precoCatalogo(S,k);if(S.cash<p)return false;S.cash-=p;S.melh=S.melh||{};S.melh[k]=true;
+  if(S.oferta&&S.oferta.tipo==='catalogo'&&S.oferta.k===k){S.oferta=null;S.meta.ofertas=(S.meta.ofertas||0)+1;}return true;}
+function novaOferta(S){
+  const tipos=['aco','matriz','prensa'];
+  const faltam=CAT_ORDER.filter(k=>!melh(S,k));if(faltam.length)tipos.push('catalogo','catalogo');
+  const tipo=pick(tipos),ate=S.t+rint(4,9)*60;
+  if(tipo==='aco')return {tipo,ate,desc:0.2,dur:2*DAY,preco:Math.round(12000*uniDe(S)/1000)*1000};
+  if(tipo==='matriz'){const m=makeMatriz(S,1);return {tipo,ate,m,preco:[0,25000,60000,150000][m.rar]};}
+  if(tipo==='prensa'){const k=pick(['p400','p600','p600','p800']);return {tipo,ate,prensa:k,desc:0.3,preco:Math.round(PRESSES[k].preco*0.7/1000)*1000};}
+  return {tipo:'catalogo',ate,k:pick(faltam),desc:0.4};
+}
+function aceitarOferta(S){
+  const o=S.oferta;if(!o||S.t>=o.ate)return false;
+  if(o.tipo==='catalogo')return comprarCatalogo(S,o.k);
+  if(S.cash<o.preco)return false;
+  if(o.tipo==='prensa'&&S.press.length>=MAX_PRESSES)return false;
+  S.cash-=o.preco;
+  if(o.tipo==='aco')S.acoPromo={ate:S.t+o.dur,desc:o.desc};
+  if(o.tipo==='matriz'){if(matrizesDe(S).length>=MAX_MATRIZES)S.cash+=RARIDADES[o.m.rar].venda;else matrizesDe(S).push(o.m);}
+  if(o.tipo==='prensa'){addPress(S,o.prensa);autoAssign(S);}
+  S.oferta=null;S.meta.ofertas=(S.meta.ofertas||0)+1;return true;
+}
 function simStep(S,dt,ev){
   const E=effects(S);
   autoAssign(S);
+  if(S.t-(S.autoT||0)>=30){S.autoT=S.t;autoGerente(S,ev);}
   stepForks(S,dt,ev);
   for(const p of S.press) stepPress(S,p,dt,E,ev);
   const before=dayOf(S.t);
@@ -592,24 +754,25 @@ function simStep(S,dt,ev){
   step8D(S,ev);
   if(dayOf(S.t)>before) dayRollover(S,ev);
 }
-function novaMeta(){return {uni:1,pat:0,patTot:0,ups:{},vida:0,melhorNivel:1,saltos:0};}
+function novaMeta(){return {uni:1,pat:0,patTot:0,ups:{},vida:0,melhorNivel:1,saltos:0,mats:[],auto:{}};}
 function newState(nome,meta){
   meta=meta||novaMeta();
   const cash0=120000+50000*(meta.ups.capital||0);
   const S={v:3,meta,cashDay:cash0,nome:nome||'Estamparia Aço Norte',t:6*60,cash:cash0,rep:Math.min(100,10+10*(meta.ups.fama||0)),press:[],staff:[],orders:[],board:[],cands:[],prepBusy:[],hist:[],days:[],comps:[],
-    tot:{prod:0,brk:0,ped:0,noPrazo:0,receita:0},ftasks:[],fbusy:{},def:{},speed:1,mis:meta.uni>1?999:0,nextAud:7,auds:[],log:[],over:false};
+    tot:{prod:0,brk:0,ped:0,noPrazo:0,receita:0},ftasks:[],fbusy:{},melh:{},oferta:null,acoPromo:null,def:{},speed:1,mis:meta.uni>1?999:0,nextAud:7,auds:[],log:[],over:false};
   PARTS.forEach(p=>S.def[p.id]=p.def*(1-0.08*tec(S,'aco'))*(1+0.1*(meta.uni-1)));
   for(const tipo of ['p400','p400','p600','p800'].slice(0,1+tec(S,'galpao'))){
     const p=addPress(S,tipo);const op=makeStaff('operador',1,S);S.staff.push(op);p.op=op.id;
   }
-  S.board=[makeOrder(S,400),makeOrder(S,400),makeOrder(S,400)];
+  const o1=makeOrder(S,400);o1.qtd=1500;o1.dias=1;
+  S.board=[o1,makeOrder(S,400),makeOrder(S,400)];
   S.cands=makeCands(S);
   return S;
 }
 function freeTec(S){const t=S.staff.find(s=>s.role==='tecnico'&&!S.press.some(p=>p.tec===s.id));return t?t.id:null;}
 function addPress(S,tipo){
   const p={id:uid(),tipo,op:null,tec:null,ped:null,part:null,setupPart:null,st:'idle',rem:0,remTot:0,cond:100,day:newDay(),n:S.press.length+1};
-  p.coil=Math.round(coilSize(p)*rnd(0.4,1));
+  p.coil=Math.round(coilSize(p,S)*rnd(0.4,1));
   S.press.push(p);
   const free=S.staff.find(s=>s.role==='operador'&&!S.press.some(x=>x.op===s.id));
   if(free) p.op=free.id;
@@ -626,9 +789,16 @@ function saltarUniverso(S){
 }
 function comprarTec(S,k){const t=TECHS[k],l=tec(S,k);if(!t||l>=t.max)return false;const c=t.custo(l);if(S.meta.pat<c)return false;S.meta.pat-=c;S.meta.ups[k]=l+1;return true;}
 function faturamentoVida(S){return (S.meta?S.meta.vida:0)+(S.tot.receita||0);}
+function makeUrgente(S){
+  const o=makeOrder(S);const t=partById(o.part).t;const rate=PRESSES['p'+t].gpm*0.6;
+  o.qtd=Math.max(1000,Math.round(rate*rnd(150,280)/100)*100);
+  o.prazoMin=Math.round(o.qtd/rate*1.6+120);o.dias=0;
+  o.preco=+(o.preco*2.5).toFixed(2);o.esp=true;o.exp=S.t+240;
+  return o;
+}
 function acceptOrder(S,o){
   S.board=S.board.filter(x=>x!==o);
-  o.st='ativo';o.due=S.t+o.dias*DAY;
+  o.st='ativo';o.due=S.t+(o.prazoMin||o.dias*DAY);
   S.orders.push(o);autoAssign(S);
 }
 
@@ -644,7 +814,8 @@ const LOOK={
   inspetor:{hel:'#f4f4f4',sh:'#8fdc98',pa:'#394451',tool:'board'},
   tecnico:{hel:'#f4f4f4',sh:'#4b535d',pa:'#2a2e35',st:1,tool:'wrench'},
   metrologista:{hel:null,sh:'#2f7a45',pa:'#34425a',tool:'caliper',glasses:1},
-  empilhadeira:{hel:'#f4f4f4',sh:'#3f6fb5',pa:'#2b3b5e',st:1}
+  empilhadeira:{hel:'#f4f4f4',sh:'#3f6fb5',pa:'#2b3b5e',st:1},
+  comprador:{hel:'#f4f4f4',sh:'#f7f7f7',pa:'#2b2f3a',tie:'#2c5190',tool:'board'}
 };
 const PCOL={p400:['#3f6f9e','#6a98c6','#2c4f73'],p600:['#4d8a5c','#74b183','#356441'],p800:['#a4513b','#cc7a62','#76382a']};
 
@@ -671,6 +842,7 @@ function drawGuy(c,X,Y,s,o){
   P(4,7,2,1,sk);P(2,7,2,1,L.sh);P(6,7,2,1,L.sh);
   P(2,8,6,4,L.sh);
   if(L.st)P(2,10,6,1,'#d4dde3');
+  if(L.tie){P(4,8,2,1,L.tie);P(4,9,2,3,L.tie);P(4,11,2,1,'#1d3a6b');}
   // braços
   const up=o.work&&o.arm;
   if(up){P(1,6,1,3,L.sh);P(8,6,1,3,L.sh);P(1,5,1,1,sk);P(8,5,1,1,sk);}
@@ -720,7 +892,7 @@ const Scene={ents:{},parts:[],trucks:[],wander:{},shakeT:0};
 const slotXY=i=>{const col=i%SC.COLS,row=Math.floor(i/SC.COLS);return {x0:4+col*SC.CELL,y0:SC.TOP+row*(SC.ROWH+SC.AISLE),row};};
 const walkY=row=>row>=2?SC.DOCK+17:SC.TOP+row*(SC.ROWH+SC.AISLE)+SC.ROWH+9;
 const rowOfY=y=>y>=SC.DOCK?2:Math.min(1,Math.floor((y-SC.TOP-1)/(SC.ROWH+SC.AISLE)));
-const IDLE={operador:[10,20,30,40],preparador:[52,60],tecnico:[70,78],lider:[88],inspetor:[96,104],metrologista:[112]};
+const IDLE={operador:[10,20,30,40],preparador:[52,60],tecnico:[70,78],lider:[88],inspetor:[96,104],metrologista:[112],comprador:[124]};
 function idleSpot(s,i){const a=IDLE[s.role]||[20];return {x:a[i%a.length]+(Math.floor(i/a.length)*5)%12,y:SC.DOCK+22};}
 const forkPark=i=>({x:34+i*16,y:SC.DOCK+12});
 function targetFor(s,idx,now){
@@ -740,7 +912,7 @@ function targetFor(s,idx,now){
   if(s.role==='tecnico'){const k=S.press.findIndex(p=>p.tec===s.id&&(p.st==='broken'||p.st==='pm'));if(k>=0){const {x0,y0}=slotXY(k);return {x:x0+22,y:y0+SC.ROWH+8,work:1,at:k};}return {...idleSpot(s,idx),idle:1};}
   // patrulha
   let w=Scene.wander[s.id];
-  const stayHome=s.role==='metrologista'?0.6:0.1;
+  const stayHome=(s.role==='metrologista'||s.role==='comprador')?0.6:0.1;
   if(!w||now>w.until){
     if(!S.press.length||Math.random()<stayHome){w={...idleSpot(s,idx),until:now+rnd(4000,9000)};}
     else{const k=rint(0,S.press.length-1);const {x0,y0}=slotXY(k);w={x:x0+rint(10,30),y:y0+SC.ROWH+8,until:now+rnd(5000,10000),at:k,look:1};}
@@ -919,7 +1091,8 @@ const RM=matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 const KEY='golpe-de-prensa-v3', KEY_OLD='golpe-de-prensa-v2';
 let S=null, tab='fabrica', modal=null, modalRef=null, sig='', lastSave=0, audit=null;
-function save(){if(!S)return;try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
+function save(){if(!S)return;S.savedAt=Date.now();try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
+function normalizar(s){s.meta=s.meta||novaMeta();s.meta.mats=s.meta.mats||[];s.meta.auto=s.meta.auto||{};s.press.forEach(p=>{p.lv=p.lv||1;});return s;}
 function loadSave(){try{
   let r=localStorage.getItem(KEY);if(r){const s=JSON.parse(r);if(s&&s.v===3&&s.press)return s;}
   r=localStorage.getItem(KEY_OLD);if(r){const s=JSON.parse(r);if(s&&s.v===2&&s.press){s.v=3;s.meta=novaMeta();s.tot.receita=(s.hist||[]).reduce((a,h)=>a+(h.receita||0),0);return s;}}
@@ -984,7 +1157,7 @@ function ev(type,d){
   const pn=p=>`Prensa ${p.n}`;
   const now=performance.now();
   switch(type){
-    case 'entrega':{const o=d.o;
+    case 'entrega':{const o=d.o;if(o.esp&&!d.late)S.meta.urgOk=(S.meta.urgOk||0)+1;
       Scene.trucks.push({t:0});
       setTimeout(()=>{coinBurst(DOCKX,SC.DOCK+6,d.comp?6:16);floatAt(DOCKX,SC.DOCK+4,'+'+brl(d.receita),'big');},RM?0:900);
       snd('coin');
@@ -1006,6 +1179,11 @@ function ev(type,d){
     case 'bobina_fim':{const c=pressCenter(d.p);floatAt(c.x,c.y,'Bobina nova!','good');break;}
     case 'pronto':{const c=pressCenter(d.p);floatAt(c.x,c.y,d.fork?'Pedido pronto!':'Levando a pé...',d.fork?'good':'bad');
       if(!d.fork)log(`Pedido pronto na ${pn(d.p)}. Sem empilhadeira, o operador está levando a pé até a expedição.`,'warn');break;}
+    case 'matriz':{const m=d.m,R=RARIDADES[m.rar];
+      const msg=d.vendida?`Achou a ${nomeMatriz(m)} (${R.n.toLowerCase()}), mas o depósito de matrizes está cheio: vendida por ${brl(d.vendida)}.`:`Matriz ${R.n.toLowerCase()} encontrada: ${nomeMatriz(m)}! ${efeitoMatriz(m)}.`;
+      log(msg,'gold');toast(msg,'gold');snd(m.rar>=2?'trophy':'coin');setTimeout(()=>floatAt(DOCKX-20,SC.DOCK-6,nomeMatriz(m),'big'),RM?0:1300);break;}
+    case 'auto':log(d.txt,'info');break;
+    case 'oferta':{log('O comprador achou uma oferta relâmpago. Veja na aba Compras.','gold');toast('Oferta relâmpago! Veja na aba Compras.','gold');snd('coin');break;}
     case 'dia':{
       const last=S.days[S.days.length-1];if(last)last.lucro=d.lucro;
       const m=`Fim do dia ${d.d}: ${d.lucro>=0?'lucro de':'prejuízo de'} ${brl(Math.abs(d.lucro))}.`;log(m,d.lucro>=0?'good':'bad');toast(m,d.lucro>=0?'good':'bad');
@@ -1052,6 +1230,12 @@ const TROPHIES=[
   {id:'salto1',n:'Viajante',d:'Salte para outro universo pela primeira vez.',r:0,ok:()=>uniDe(S)>=2},
   {id:'uni5',n:'Andarilho cósmico',d:'Chegue ao universo 5.',r:0,ok:()=>uniDe(S)>=5},
   {id:'tec10',n:'Cientista',d:'Compre 10 níveis de tecnologia.',r:0,ok:()=>Object.values(S.meta.ups||{}).reduce((a,b)=>a+b,0)>=10},
+  {id:'lenda',n:'Achado lendário',d:'Consiga uma matriz lendária.',r:20000,ok:()=>matrizesDe(S).some(m=>m.rar===3)},
+  {id:'colec',n:'Colecionador',d:'Junte 10 matrizes.',r:15000,ok:()=>matrizesDe(S).length>=10},
+  {id:'up5',n:'Prensa no talo',d:'Leve uma prensa ao nível 5.',r:20000,ok:()=>S.press.some(p=>(p.lv||1)>=5)},
+  {id:'urg5',n:'Contra o relógio',d:'Entregue 5 pedidos urgentes no prazo.',r:15000,ok:()=>(S.meta.urgOk||0)>=5},
+  {id:'negoc',n:'Negociador',d:'Instale os 6 itens do catálogo de fornecedores no mesmo universo.',r:30000,ok:()=>CAT_ORDER.every(k=>melh(S,k))},
+  {id:'ofer3',n:'Caçador de ofertas',d:'Aproveite 3 ofertas relâmpago.',r:15000,ok:()=>(S.meta.ofertas||0)>=3},
   {id:'logis',n:'Logística afiada',d:'Tenha 2 operadores de empilhadeira.',r:10000,ok:()=>S.staff.filter(s=>s.role==='empilhadeira').length>=2},
   {id:'nv25',n:'Fábrica lendária',d:'Leve uma fábrica ao nível 25.',r:0,ok:()=>nivelDe(S.tot.receita||0)>=25}
 ];
@@ -1178,7 +1362,7 @@ function showHelp(){
   openModal(`<h2>Como jogar</h2>
   <ul class="check">
     <li><i class="gold">1</i><div>Aceite pedidos na aba Pedidos. A prensa liga sozinha e o caminhão leva quando termina.</div></li>
-    <li><i class="gold">2</i><div>Contrate a equipe na aba Equipe. A cor da camisa mostra o setor: cinza claro é operador e preparador, verde claro é inspetor, cinza escuro é manutenção, azul é logística (empilhadeira), verde escuro é metrologista e vermelho é líder.</div></li>
+    <li><i class="gold">2</i><div>Contrate a equipe na aba Equipe. A cor da camisa mostra o setor: cinza claro é operador e preparador, verde claro é inspetor, cinza escuro é manutenção, azul é logística (empilhadeira), verde escuro é metrologista, vermelho é líder e branco com gravata é comprador.</div></li>
     <li><i class="gold">+</i><div>Cada prensa gasta bobina. A empilhadeira traz bobina nova do estoque e leva o pedido pronto até a expedição. Sem ela, o operador faz isso a pé e a prensa fica parada.</div></li>
     <li><i class="gold">3</i><div>Toque numa prensa ou numa pessoa lá no chão de fábrica para ver detalhes. O quadrado piscando é onde cabe uma prensa nova.</div></li>
     <li><i class="gold">4</i><div>Peça ruim que chega no cliente vira reclamação. Resolva com um 8D no Painel.</div></li>
@@ -1189,6 +1373,54 @@ function showHelp(){
   <h3>Barrinhas embaixo da prensa</h3>
   <p class="muted">A amarela é o andamento do pedido. A de baixo é a saúde da máquina: quando fica vermelha, a prensa está perto de quebrar.</p>
   <button class="btn wide" data-act="close">Entendi</button>`,'help');
+}
+const FILA=[];
+const durReal=s=>{s=Math.round(s);const h=Math.floor(s/3600),m=Math.floor(s%3600/60);return h?`${h} h${m?` ${m} min`:''}`:`${Math.max(1,m)} min`;};
+function voltarDeFora(seg){
+  if(!S||S.over||seg<120)return;
+  const R=simOffline(S,seg);
+  if(R.minJogo<4&&!R.ped)return;
+  checkMissions();
+  FILA.push(()=>showOffline(R));save();enviarRanking(true);
+}
+function showOffline(R){
+  snd('coin');
+  const lucro=S.cash-R.cash0;
+  const ups=[...new Set(R.ups.map(s=>s.nome))];
+  const motivo={sem_pedidos:`A fábrica parou por falta de pedidos depois de ${durReal(R.segUsados)}. Com o PCP automático (aba Progresso, Escritório), ela continua aceitando pedidos sozinha.`,
+    auditoria:'O auditor chegou e está esperando você na fábrica.',caixa:'O caixa ficou no vermelho e a fábrica parou para não piorar.'}[R.motivo]||'';
+  openModal(`<div class="brand">Bem-vindo de volta!</div><h2>Enquanto você estava fora</h2>
+    <p class="muted">Você ficou fora ${durReal(R.segFora)}. A fábrica trabalhou por ${durReal(R.segUsados)}, o que dá ${dur(R.minJogo)} de jogo.${R.limitado?` O limite é de ${horasOffline(S)} h; a tecnologia Turno da noite aumenta.`:''}</p>
+    <dl class="big3"><div><dt>Faturamento</dt><dd class="gold">${brl(R.receita)}</dd></div><div><dt>Entregas</dt><dd>${R.ped}</dd></div><div><dt>Saldo no caixa</dt><dd class="${lucro>=0?'good':'bad'}">${lucro>=0?'+':''}${brl(lucro)}</dd></div></dl>
+    <ul class="check">
+      ${ups.length?`<li><i class="good">▲</i><div>Subiram de nível: ${ups.map(esc).join(', ')}.</div></li>`:''}
+      ${R.mats.length?`<li><i class="gold">◆</i><div>Matrizes encontradas: ${R.mats.map(m=>`<b style="color:${RARIDADES[m.rar].c}">${nomeMatriz(m)}</b>`).join(', ')}.</div></li>`:''}
+      ${R.auto?`<li><i class="info">⚙</i><div>As automações do escritório agiram ${R.auto} vezes.</div></li>`:''}
+      ${R.brk?`<li><i class="bad">!</i><div>${R.brk} quebra(s) de prensa.</div></li>`:''}
+      ${R.comp?`<li><i class="bad">!</i><div>${R.comp} reclamação(ões) de cliente. Veja no Painel.</div></li>`:''}
+    </ul>
+    ${motivo?`<p class="warn">${motivo}</p>`:''}
+    <button class="btn wide" data-act="close">Coletar e continuar</button>`,'offline');
+}
+function checkDiario(){
+  if(!S)return;
+  const hoje=new Date().toLocaleDateString('sv'),ontem=new Date(Date.now()-864e5).toLocaleDateString('sv');
+  const D=S.meta.diario||{};if(D.ultimo===hoje)return;
+  const seq=D.ultimo===ontem?(D.seq||0)+1:1;
+  S.meta.diario={ultimo:hoje,seq};
+  const valor=Math.round(15000*uniDe(S)*(1+0.25*Math.min(seq-1,6))/1000)*1000;
+  S.cash+=valor;
+  const m=seq%3===0?ganharMatriz(S,seq>=7?2:1,()=>{},'bau'):null;
+  FILA.push(()=>showDiario(seq,valor,m));save();
+}
+function showDiario(seq,valor,m){
+  snd('trophy');
+  const pos=((seq-1)%7)+1;
+  openModal(`<div class="brand">Baú do dia</div><h2>${seq>1?`${seq} dias seguidos!`:'Bom dia, gerente!'}</h2>
+    <div class="streak">${[1,2,3,4,5,6,7].map(i=>`<i class="${i<=pos?'on':''} ${i%3===0?'gem':''}">${i===7?'7◆':i%3===0?i+'◆':i}</i>`).join('')}</div>
+    <p>Você ganhou <b class="gold">${brl(valor)}</b>${m?` e a <b style="color:${RARIDADES[m.rar].c}">${nomeMatriz(m)}</b> (${RARIDADES[m.rar].n.toLowerCase()}): ${efeitoMatriz(m)}`:''}.</p>
+    <p class="tiny">Volte amanhã para manter a sequência: o baú cresce a cada dia seguido, e nos dias 3, 6 e 7 vem uma matriz de brinde.</p>
+    <button class="btn wide" data-act="close">Abrir o baú</button>`,'daily');
 }
 function showOver(){
   snd('bad');
@@ -1211,17 +1443,28 @@ function showPress(id){
   const pmBtn=hasTec()?`<button class="btn ghost" data-act="pm" data-arg="${p.id}" ${busy?'disabled data-lock':''}>Revisar agora (grátis)</button>`
     :`<button class="btn ghost" data-act="pm" data-arg="${p.id}" data-cost="${PM_EXT}" ${busy?'disabled data-lock':''}>Revisão terceirizada ${brl(PM_EXT)}</button>`;
   openModal(`<div class="mhead"><canvas class="px" data-pressimg="${p.id}" width="30" height="46" style="width:60px;height:92px"></canvas>
-    <div><h2>Prensa ${p.n}</h2><div class="muted">${P.t} toneladas, até ${P.gpm} golpes por minuto</div>${L('pst:'+p.id,'state')}</div></div>
+    <div><h2>Prensa ${p.n} <span class="gold">${'★'.repeat((p.lv||1)-1)}</span></h2><div class="muted">${P.t} toneladas, até ${num(gpmEff(p))} golpes por minuto</div>${L('pst:'+p.id,'state')}</div></div>
     <label class="tiny" for="mop-${p.id}">Operador</label>${opSelect(p,'mop-'+p.id)}
     ${o?`<div class="card"><div class="row"><canvas class="px" data-part="${o.part}" width="16" height="16" style="width:32px;height:32px"></canvas><div class="grow"><b>${partById(o.part).nome}</b><div class="tiny">${esc(o.cli)}</div></div></div>
       <div class="bar y"><i data-w="oprog:${o.id}"></i></div><div class="barlab">${L('oprog:'+o.id)}${L('odue:'+o.id)}</div><div class="tiny">${L('oppm:'+o.id)}</div></div>`
       :`<p class="muted">Sem pedido. Aceite um na aba Pedidos e ela liga sozinha.</p>`}
+    ${blocoNivelMatriz(p)}
     <div class="barlab"><span>Bobina</span>${L('pcoil:'+p.id)}</div><div class="bar b"><i data-w="pcoil:${p.id}"></i></div>
     <p class="tiny">${temEmpilhadeira(S)?'A empilhadeira traz bobina nova quando esta acabar.':'Sem empilhadeira, o operador vai a pé buscar bobina e a prensa fica 1 h parada.'}</p>
     <div class="barlab"><span>Saúde da máquina</span>${L('pcond:'+p.id)}</div><div class="bar"><i data-w="pcond:${p.id}"></i></div>
     <p class="tiny">${hasTec()?'Seus técnicos revisam sozinhos quando a saúde cai.':'Sem técnico, a saúde só volta com revisão ou depois de quebrar.'}</p>
     <div class="row wrap">${pmBtn}${S.press.indexOf(p)>0?`<button class="btn danger" data-act="sell" data-arg="${p.id}" ${p.st==='exped'?'disabled data-lock title="Espere o pedido chegar na expedição"':''}>Vender por ${brl(valorVenda(p))}</button>`:''}<button class="btn ghost" data-act="close">Fechar</button></div>
     ${S.press.indexOf(p)>0?'<p class="tiny">A venda paga 60% do preço de nova, menos o desgaste da máquina.</p>':'<p class="tiny">A primeira prensa da fábrica não pode ser vendida.</p>'}`,'press',id);
+}
+function blocoNivelMatriz(p){
+  const lv=p.lv||1,mx=lv>=MAX_LV_PRENSA;
+  const livres=matrizesDe(S).filter(x=>x.id===p.mat||!S.press.some(q=>q.mat===x.id)).sort((a,b)=>b.rar-a.rar);
+  const m=matrizDaPrensa(S,p);
+  return `<div class="card"><div class="row between wrap"><b>Nível ${lv} de ${MAX_LV_PRENSA}</b>${mx?'<span class="tiny">Nível máximo</span>':`<button class="btn sm" data-act="upPress" data-arg="${p.id}" data-cost="${custoUpPrensa(p)}">Melhorar por ${brl(custoUpPrensa(p))}</button>`}</div>
+    <div class="tiny">Cada nível dá +6% de cadência e 5% menos desgaste.</div>
+    <label class="tiny" for="mat-${p.id}">Matriz equipada</label>
+    <select id="mat-${p.id}" data-act="setmat" data-arg="${p.id}"><option value="">Nenhuma</option>${livres.map(x=>`<option value="${x.id}" ${x.id===p.mat?'selected':''}>${nomeMatriz(x)} (${RARIDADES[x.rar].n}): ${efeitoMatriz(x)}</option>`).join('')}</select>
+    ${m?`<div class="tiny" style="color:${RARIDADES[m.rar].c}">${efeitoMatriz(m)}</div>`:matrizesDe(S).length?'':'<div class="tiny">Matrizes caem de pedidos entregues no prazo. Pedidos urgentes sempre dão uma rara ou melhor.</div>'}</div>`;
 }
 function showStaff(id){
   const s=staffById(id);if(!s||!S.staff.includes(s))return closeModal();
@@ -1269,10 +1512,12 @@ function live(k){
   switch(a){
     case 'clock':return `Dia ${dayOf(S.t)}, ${hhmm(S.t)}`;
     case 'cash':return brl(S.cash);
+    case 'oferta':return S.oferta&&S.t<S.oferta.ate?`Some em ${dur(S.oferta.ate-S.t)}`:'Oferta encerrada';
+    case 'promo':return S.acoPromo&&S.t<S.acoPromo.ate?`termina em ${dur(S.acoPromo.ate-S.t)}`:'encerrado';
     case 'lvnext':{const n=nivelDe(S.tot.receita||0);return `faltam ${brl(recDoNivel(n+1)-(S.tot.receita||0))} de faturamento para o nível ${n+1}`;}
     case 'pst':{const p=pressById(id);return p?pressState(p):'';}
     case 'pcond':{const p=pressById(id);return p?`${Math.round(p.cond)}%`:'';}
-    case 'pcoil':{const p=pressById(id);return p?`dá para mais ${num(Math.max(0,p.coil??coilSize(p)))} peças`:'';}
+    case 'pcoil':{const p=pressById(id);return p?`dá para mais ${num(Math.max(0,p.coil??coilSize(p,S)))} peças`:'';}
     case 'oprog':{const o=orderById(id);return o?`${num(Math.min(o.good,o.qtd))} de ${num(o.qtd)} peças`:'';}
     case 'oppm':{const o=orderById(id);if(!o)return '';return o.good>0?`Peças ruins até agora: ${num(o.esc/Math.max(1,o.good)*1e6)} PPM (cliente aceita ${num(o.ppm)})`:`Cliente aceita até ${num(o.ppm)} PPM`;}
     case 'odue':{const o=orderById(id);if(!o)return '';const r=o.due-S.t;return r>=0?`Entrega em ${dur(r)}`:`Atrasado ${dur(-r)}`;}
@@ -1283,7 +1528,7 @@ function live(k){
 function liveW(k){
   const [a,id]=k.split(':');
   if(a==='pcond'){const p=pressById(id);return p?p.cond:0;}
-  if(a==='pcoil'){const p=pressById(id);return p?Math.max(0,(p.coil??coilSize(p)))/coilSize(p)*100:0;}
+  if(a==='pcoil'){const p=pressById(id);return p?Math.max(0,(p.coil??coilSize(p,S)))/coilSize(p,S)*100:0;}
   if(a==='lvl'){const n=nivelDe(S.tot.receita||0),a0=recDoNivel(n),a1=recDoNivel(n+1);return ((S.tot.receita||0)-a0)/(a1-a0)*100;}
   if(a==='oprog'){const o=orderById(id);return o?Math.min(100,o.good/o.qtd*100):0;}
   return 0;
@@ -1324,7 +1569,7 @@ function sceneLabels(){
   for(let i=0;i<8;i++){const {x0,y0}=slotXY(i);const p=S.press[i];
     if(!p&&i!==S.press.length)continue;
     const el=document.createElement('span');el.className='lab'+(p?'':' empty');
-    el.textContent=p?`P${p.n} ${PRESSES[p.tipo].t}t`:'Comprar';
+    el.textContent=p?`P${p.n} ${PRESSES[p.tipo].t}t${(p.lv||1)>1?' '+'★'.repeat(p.lv-1):''}${p.mat?' ◆':''}`:'Comprar';
     el.style.left=((x0+(p?1:10))/SC.W*100)+'%';el.style.top=((y0+(p?1:44))/SC.H*100)+'%';
     ov.appendChild(el);}
 }
@@ -1336,8 +1581,10 @@ function signature(){
   if(tab==='fabrica')parts.push(S.log.length?S.log[0].t+S.log[0].txt:'');
   if(tab==='equipe')parts.push(S.cands.map(c=>c.id).join(','));
   if(tab==='painel')parts.push(S.comps.some(c=>c.st==='8d')?Math.floor(S.t/60):0);
+  if(tab==='compras')parts.push(S.oferta?S.oferta.ate:0,JSON.stringify(S.melh||{}),compradorLv(S),acoPromo(S)>0,S.press.length,S.staff.filter(x=>x.role==='comprador').length);
+  parts.push(!!(S.oferta&&S.t<S.oferta.ate));
   if(tab==='ranking')parts.push(RK.quando,RK.erro,RK.carregando,JOG.apelido,RK.trocando);
-  if(tab==='progresso')parts.push(S.meta.pat,JSON.stringify(S.meta.ups),patentesPara(S));
+  if(tab==='progresso')parts.push(S.meta.pat,JSON.stringify(S.meta.ups),patentesPara(S),JSON.stringify(S.meta.auto||{}),matrizesDe(S).length,S.press.map(p=>p.mat||'').join(','));
   parts.push(nivelDe(S.tot.receita||0),uniDe(S));
   return parts.join('#');
 }
@@ -1349,7 +1596,7 @@ function render(){
   $('#plantName').textContent=S.nome;
   const alertP=S.press.filter(p=>['broken','noop','nomat'].includes(p.st)).length;
   const idle=S.press.filter(p=>!p.ped).length;
-  setBadge('#b-fab',alertP);setBadge('#b-ped',idle&&S.board.length?idle:0);setBadge('#b-pain',S.comps.filter(c=>c.st==='aberta').length);setBadge('#b-tro',tab==='progresso'?0:((S.troNew||0)+(patentesPara(S)?1:0)));
+  setBadge('#b-fab',alertP);setBadge('#b-ped',idle&&S.board.length?idle:0);setBadge('#b-pain',S.comps.filter(c=>c.st==='aberta').length);setBadge('#b-comp',S.oferta&&S.t<S.oferta.ate?1:0);setBadge('#b-tro',tab==='progresso'?0:((S.troNew||0)+(patentesPara(S)?1:0)));
   const m=MISSIONS[S.mis];
   const nv=nivelDe(S.tot.receita||0),ns=nivelSalto(S);
   $('#mission').innerHTML=m?`<div class="mission"><span class="tag">Objetivo ${S.mis+1}/${MISSIONS.length}</span><span>${m.t}</span><span class="rw">+${brl(m.r)}</span></div>`
@@ -1357,12 +1604,12 @@ function render(){
     :`<div class="mission"><span class="tag">Meta do universo</span><span>Leve a fábrica ao nível ${ns} para saltar de universo e ganhar patentes.</span><span class="rw">Nível ${nv} de ${ns}</span></div>`;
   $('#lvrow').innerHTML=`<span class="uni">Universo ${uniDe(S)}: ${nomeUni(uniDe(S))}</span><span class="lvl">Nível ${nv}</span><span class="lvbar"><i data-w="lvl"></i></span><span class="tiny" data-l="lvnext"></span>`;
   const v=$('#view');
-  v.innerHTML=tab==='fabrica'?vFabrica():tab==='pedidos'?vPedidos():tab==='equipe'?vEquipe():tab==='painel'?vPainel():tab==='ranking'?vRanking():vProgresso();
+  v.innerHTML=tab==='fabrica'?vFabrica():tab==='pedidos'?vPedidos():tab==='equipe'?vEquipe():tab==='compras'?vCompras():tab==='painel'?vPainel():tab==='ranking'?vRanking():vProgresso();
   if(tab==='ranking'&&rankLigado()&&!RK.carregando&&Date.now()-RK.quando>60000)carregarRanking();
   if(tab==='fabrica'){$('#sceneSlot').appendChild(sceneEl);sceneLabels();syncSide();}
   updateLive();drawPortraits(performance.now());
 }
-const ROLE_CURTO={operador:'Operadores',preparador:'Preparadores',empilhadeira:'Empilhadeira',lider:'Líderes',inspetor:'Inspetores',tecnico:'Técnicos',metrologista:'Metrologia'};
+const ROLE_CURTO={comprador:'Compras',operador:'Operadores',preparador:'Preparadores',empilhadeira:'Empilhadeira',lider:'Líderes',inspetor:'Inspetores',tecnico:'Técnicos',metrologista:'Metrologia'};
 function vFabrica(){
   const lg=S.log.slice(0,30).map(l=>`<li class="${l.k}"><time>D${dayOf(l.t)} ${hhmm(l.t)}</time><span>${esc(l.txt)}</span></li>`).join('');
   const tiles=ROLE_ORDER.map(r=>{const ms=S.staff.filter(s=>s.role===r).sort((a,b)=>b.lv-a.lv);if(!ms.length)return '';
@@ -1388,13 +1635,14 @@ function vPedidos(){
   const act=S.orders.map(o=>{const pr=o.press?pressById(o.press):null;const part=partById(o.part);
     return `<div class="card"><div class="row"><canvas class="px" data-part="${o.part}" width="16" height="16" style="width:32px;height:32px"></canvas><div class="grow"><b>${part.nome}</b><div class="tiny">${esc(o.cli)}. ${pr?`Na Prensa ${pr.n}`:`Na fila, esperando uma prensa de ${part.t} t`}</div></div></div>
       <div class="bar y"><i data-w="oprog:${o.id}"></i></div><div class="barlab">${L('oprog:'+o.id)}${L('odue:'+o.id)}</div><div class="tiny">${L('oppm:'+o.id)}</div></div>`;}).join('');
-  const board=S.board.map(o=>{const part=partById(o.part);const can=part.t<=maxT;const lucro=o.qtd*(o.preco-part.mat);
-    return `<div class="card"><div class="row"><canvas class="px" data-part="${o.part}" width="16" height="16" style="width:40px;height:40px"></canvas><div class="grow"><b>${part.nome}</b><div class="tiny">${esc(o.cli)}</div></div><span class="pill ${o.ppm<=800?'warn':'muted'}">${o.ppm<=800?'Exigente':'Tranquilo'}</span></div>
-      <dl class="facts"><div><dt>Peças</dt><dd>${num(o.qtd)}</dd></div><div><dt>Prazo</dt><dd>${o.dias} ${o.dias>1?'dias':'dia'}</dd></div><div><dt>Paga</dt><dd class="gold">${brl(o.qtd*o.preco)}</dd></div><div><dt>Sobra depois do aço</dt><dd class="good">${brl(lucro)}</dd></div></dl>
+  const board=S.board.map(o=>{const part=partById(o.part);const can=part.t<=maxT;const lucro=o.qtd*(o.preco-part.mat*fatorAco(S));
+    return `<div class="card ${o.esp?'urg':''}"><div class="row"><canvas class="px" data-part="${o.part}" width="16" height="16" style="width:40px;height:40px"></canvas><div class="grow"><b>${part.nome}</b><div class="tiny">${esc(o.cli)}</div></div>${o.esp?'<span class="pill urgp">Urgente</span>':`<span class="pill ${o.ppm<=800?'warn':'muted'}">${o.ppm<=800?'Exigente':'Tranquilo'}</span>`}</div>
+      ${o.esp?'<div class="urgtxt">Paga 2,5 vezes mais e garante uma matriz rara ou melhor se chegar no prazo. Atrasou, perde o bônus.</div>':''}
+      <dl class="facts"><div><dt>Peças</dt><dd>${num(o.qtd)}</dd></div><div><dt>Prazo</dt><dd class="${o.esp?'bad':''}">${o.esp?dur(o.prazoMin):`${o.dias} ${o.dias>1?'dias':'dia'}`}</dd></div><div><dt>Paga</dt><dd class="gold">${brl(o.qtd*o.preco)}</dd></div><div><dt>Sobra depois do aço</dt><dd class="good">${brl(lucro)}</dd></div></dl>
       <div class="tiny">Aceita até ${num(o.ppm)} PPM de peça ruim. Oferta some em ${dur(o.exp-S.t)}.</div>
       <button class="btn wide" data-act="accept" data-arg="${o.id}" ${can?'':'disabled data-lock'}>${can?'Aceitar':`Precisa de prensa de ${part.t} t`}</button></div>`;}).join('');
   return `${act?`<section class="panel"><div class="phead"><h2>Em produção</h2><span class="tiny">${S.orders.length} pedido(s)</span></div><div class="grid">${act}</div></section>`:''}
-  <section class="panel"><div class="phead"><h2>Pedidos na mesa</h2><span class="tiny">Chegam pedidos novos todo dia</span></div>
+  <section class="panel"><div class="phead"><h2>Pedidos na mesa</h2><span class="tiny">${autoLigada(S,'pcp')?'<span class="good">PCP automático ligado: aceitando pedidos sozinho.</span>':'Chegam pedidos novos todo dia'}</span></div>
     <p class="muted">Cuidado para não pegar mais do que as prensas dão conta: atraso custa desconto e estrela. Com mais estrelas, os clientes pagam melhor.</p>
     ${board?`<div class="grid">${board}</div>`:'<p class="empty">Mesa vazia. Pedidos novos chegam na virada do dia.</p>'}</section>`;
 }
@@ -1429,8 +1677,34 @@ function vEquipe(){
     if(r==='inspetor')return `cobrem ${Math.round(E.I.cov*100)}% das prensas (até 3 cada)`;
     if(r==='tecnico')return `cobrem ${Math.round(E.T.cov*100)}% das prensas (até 3 cada)`;
     if(r==='metrologista')return 'atende a fábrica toda';
+    if(r==='comprador')return `aço ${pct(descAco(S))} mais barato (vale o melhor comprador)`;
     return '';
   }
+}
+function vCompras(){
+  const NV=compradorLv(S),cs=S.staff.filter(x=>x.role==='comprador');
+  const promo=acoPromo(S)?`<p class="good">Contrato de aço ${pct(acoPromo(S))} mais barato ativo, ${L('promo')}.</p>`:'';
+  const topo=NV?`<section class="panel"><div class="phead"><h2>Compras</h2><span class="tiny">${cs.length>1?'Compradores':'Comprador'}: ${cs.map(x=>esc(x.nome)).join(', ')}</span></div>
+      <dl class="big3"><div><dt>Aço mais barato</dt><dd class="good">${pct(descAco(S))}</dd></div><div><dt>Desconto no catálogo</dt><dd class="good">${pct(descCatalogo(S))}</dd></div><div><dt>Atraso de fornecedor</dt><dd class="good">−60%</dd></div></dl>
+      <p class="tiny">Quanto maior o nível do comprador, maiores os descontos. Vale sempre o melhor comprador da equipe.</p>${promo}</section>`
+    :`<section class="panel"><h2>Compras</h2><p class="muted">Contrate um comprador (camisa branca com gravata) no RH. Ele negocia o aço mais barato, diminui os atrasos de fornecedor, abre o catálogo de fornecedores e encontra ofertas relâmpago.</p><div><button class="btn" data-act="tab" data-arg="equipe">Ir para o RH</button></div></section>`;
+  let of='';
+  const o=S.oferta;
+  if(NV&&o&&S.t<o.ate){
+    let titulo='',det='',preco=o.preco,cheio=0,bloq='';
+    if(o.tipo==='aco'){titulo=`Lote de aço ${pct(o.desc)} mais barato`;det=`Todo o aço que a fábrica usar nos próximos ${dur(o.dur)} sai com desconto.`;}
+    if(o.tipo==='matriz'){const R=RARIDADES[o.m.rar];titulo=`<span style="color:${R.c}">${nomeMatriz(o.m)}</span> à venda`;det=`Matriz ${R.n.toLowerCase()}: ${efeitoMatriz(o.m)}.`;}
+    if(o.tipo==='prensa'){titulo=`Prensa ${PRESSES[o.prensa].t} t seminova`;det='Chega instalada na hora, pronta para receber operador.';cheio=PRESSES[o.prensa].preco;if(S.press.length>=MAX_PRESSES)bloq='O galpão está cheio. Venda uma prensa para aproveitar.';}
+    if(o.tipo==='catalogo'){titulo=`${pct(o.desc)} de desconto: ${CATALOGO[o.k].nome}`;det=CATALOGO[o.k].desc;preco=precoCatalogo(S,o.k);cheio=CATALOGO[o.k].preco;}
+    of=`<section class="panel"><div class="card flash"><div class="row between wrap"><span class="pill urgp">Oferta relâmpago</span>${L('oferta','tiny')}</div>
+      <h3>${titulo}</h3><div class="tiny">${det}</div>
+      <div class="row wrap"><button class="btn" data-act="takeOffer" data-cost="${preco}" ${bloq?'disabled data-lock':''}>Aproveitar por ${brl(preco)}</button>${cheio?`<span class="tiny riscado">${brl(cheio)}</span>`:''}</div>
+      ${bloq?`<div class="tiny warn">${bloq}</div>`:''}</div></section>`;
+  }else if(NV)of=`<section class="panel quiet"><p class="muted">Nenhuma oferta agora. O comprador costuma achar uma por dia; quando aparecer, a aba Compras fica marcada.</p></section>`;
+  const cat=CAT_ORDER.map(k=>{const c=CATALOGO[k],tem=melh(S,k),p=precoCatalogo(S,k);
+    return `<div class="card ${tem?'owned':''}"><div class="row between wrap"><b>${c.nome}</b>${tem?'<span class="pill good">Instalado</span>':''}</div><div class="tiny">${c.desc}</div>
+      ${tem?'':NV?`<div class="row wrap"><button class="btn sm" data-act="buyCat" data-arg="${k}" data-cost="${p}">Comprar por ${brl(p)}</button>${p<c.preco?`<span class="tiny riscado">${brl(c.preco)}</span>`:''}</div>`:'<span class="tiny warn">Precisa de um comprador na equipe.</span>'}</div>`;}).join('');
+  return topo+of+`<section class="panel"><div class="phead"><h2>Catálogo de fornecedores</h2><span class="tiny">Vale para este universo. Ao saltar, a fábrica nova começa sem estes itens.</span></div><div class="grid">${cat}</div></section>`;
 }
 function vPainel(){
   const y=S.days[S.days.length-1],o=OEE(y);
@@ -1484,7 +1758,19 @@ function vProgresso(){
     return `<div class="card tech"><div class="row between wrap"><b>${t.nome}</b><span class="pips" aria-label="Nível ${l} de ${t.max}">${'<i class="on"></i>'.repeat(l)}${'<i></i>'.repeat(t.max-l)}</span></div>
       <div class="tiny">${t.desc}${prox?' Vale a partir do próximo universo.':''}</div>
       <button class="btn sm" data-act="buyTec" data-arg="${k}" ${max||m.pat<c?'disabled data-lock':''}>${max?'Nível máximo':`Comprar por ${c} ${c>1?'patentes':'patente'}`}</button></div>`;}).join('');
-  return salto+`<section class="panel"><div class="phead"><h2>Tecnologias</h2><span class="gold">${m.pat} ${m.pat===1?'patente disponível':'patentes disponíveis'}</span></div>
+  const autos=Object.entries(AUTOS).map(([k,a])=>{const tem=!!(S.meta.auto&&S.meta.auto[k]);const on=autoLigada(S,k);
+    return `<div class="card"><div class="row between wrap"><b>${a.nome}</b>${tem?`<span class="pill ${on?'good':'muted'}">${on?'Ligado':'Desligado'}</span>`:''}</div><div class="tiny">${a.desc}</div>
+      ${tem?`<button class="btn sm ghost" data-act="toggleAuto" data-arg="${k}">${on?'Desligar':'Ligar'}</button>`:`<button class="btn sm" data-act="buyAuto" data-arg="${k}" data-cost="${a.preco}">Comprar por ${brl(a.preco)}</button>`}</div>`;}).join('');
+  const ms=matrizesDe(S).slice().sort((a,b)=>b.rar-a.rar);
+  const mcards=ms.map(x=>{const R=RARIDADES[x.rar],em=S.press.find(q=>q.mat===x.id);
+    return `<div class="card mcard" style="--c:${R.c}"><div class="row between wrap"><b style="color:${R.c}">${nomeMatriz(x)}</b><span class="pill" style="color:${R.c}">${R.n}</span></div>
+      <div class="tiny">${efeitoMatriz(x)}.</div><div class="tiny">${em?`Equipada na Prensa ${em.n}`:'Guardada. Equipe pela ficha de uma prensa.'}</div>
+      ${em?'':`<button class="btn sm ghost" data-act="sellMat" data-arg="${x.id}">Vender por ${brl(R.venda)}</button>`}</div>`;}).join('');
+  return salto+`<section class="panel"><div class="phead"><h2>Escritório</h2><span class="tiny">Comprado com dinheiro, vale para sempre, em todos os universos.</span></div>
+    <p class="muted">Com o PCP automático, a fábrica continua aceitando pedidos enquanto você está fora, por até ${horasOffline(S)} h de produção.</p><div class="grid">${autos}</div></section>
+  <section class="panel"><div class="phead"><h2>Matrizes</h2><span class="tiny">${ms.length} de ${MAX_MATRIZES}. As matrizes ficam com você quando salta de universo.</span></div>
+    ${ms.length?`<div class="grid">${mcards}</div>`:'<p class="empty">Nenhuma ainda. Matrizes caem de pedidos entregues no prazo, e os pedidos urgentes sempre dão uma rara ou melhor.</p>'}</section>
+  <section class="panel"><div class="phead"><h2>Tecnologias</h2><span class="gold">${m.pat} ${m.pat===1?'patente disponível':'patentes disponíveis'}</span></div>
     <p class="muted">Tecnologias são permanentes: valem em todos os universos daqui para frente.</p><div class="grid">${techs}</div></section>
   <section class="panel"><div class="phead"><h2>Troféus</h2><span class="tiny">${got.length} de ${TROPHIES.length}</span></div>
     <div class="trophies">${TROPHIES.map(t=>{const on=got.includes(t.id);return `<div class="trophy ${on?'':'off'}"><canvas class="px" data-trophy="${on?1:0}" width="16" height="16"></canvas><div><b class="${on?'gold':''}">${t.n}</b><span class="tiny">${t.d}${t.r?` Prêmio ${brl(t.r)}.`:''}</span></div></div>`;}).join('')}</div></section>
@@ -1528,7 +1814,7 @@ const ACT={
   help:()=>showHelp(),
   close:()=>closeModal(),
   staff:id=>showStaff(id),
-  start:()=>{const n=($('#plantInput').value||'').trim();S=newState(n||'Estamparia Aço Norte',novaMeta());S.speed=1;S.tro=[];
+  start:()=>{const n=($('#plantInput').value||'').trim();S=newState(n||'Estamparia Aço Norte',novaMeta());S.speed=1;S.tro=[];setTimeout(checkDiario,400);
     const pi=$('#playerInput');const ap=limparApelido(pi?pi.value:'')||JOG.apelido||limparApelido(S.nome);
     if(ap&&ap!==JOG.apelido){JOG.apelido=ap;saveJog();}
     setTimeout(()=>enviarRanking(true),300);
@@ -1545,6 +1831,15 @@ const ACT={
     log(`${s.nome} fez o curso e subiu para o nível ${s.lv}.`,'good');showStaff(id);},
   fire:id=>{const s=staffById(id);confirmModal(`${esc(s.nome)} vai embora. A rescisão custa ${brl(rescisao(s))}.`,'fireYes',id,'Demitir');},
   fireYes:id=>{const s=staffById(id);if(!s)return closeModal();S.cash-=rescisao(s);S.staff=S.staff.filter(x=>x!==s);S.press.forEach(p=>{if(p.op===id)p.op=null;if(p.tec===id)p.tec=null;});S.prepBusy=S.prepBusy.filter(x=>x!==id);log(`${s.nome} foi desligado.`,'warn');closeModal();},
+  upPress:id=>{const p=pressById(id);if(!p||(p.lv||1)>=MAX_LV_PRENSA)return;const c=custoUpPrensa(p);if(S.cash<c)return;S.cash-=c;p.lv=(p.lv||1)+1;snd('up');
+    const cc=pressCenter(p);floatAt(cc.x,cc.y,`Nível ${p.lv}!`,'good');log(`Prensa ${p.n} melhorada para o nível ${p.lv}.`,'good');sceneLabels();showPress(id);},
+  buyAuto:k=>{const a=AUTOS[k];if(!a||S.cash<a.preco||(S.meta.auto&&S.meta.auto[k]))return;S.cash-=a.preco;S.meta.auto[k]={on:true};snd('buy');toast(`${a.nome} comprado e ligado!`,'good');log(`${a.nome} instalado no escritório.`,'gold');},
+  toggleAuto:k=>{if(!S.meta.auto[k])return;S.meta.auto[k].on=!S.meta.auto[k].on;snd('click');},
+  buyCat:k=>{if(comprarCatalogo(S,k)){snd('buy');toast(`Instalado: ${CATALOGO[k].nome}!`,'good');log(`Comprado no catálogo: ${CATALOGO[k].nome}.`,'gold');}},
+  takeOffer:()=>{const o=S.oferta;if(!o)return;const ok=aceitarOferta(S);if(!ok){toast('Não deu para fechar a oferta: confira o caixa ou o espaço no galpão.','warn');return;}
+    snd('buy');const t={aco:'Contrato de aço fechado!',matriz:'Matriz comprada!',prensa:'Prensa seminova instalada!',catalogo:`Instalado com desconto: ${o.k&&CATALOGO[o.k]?CATALOGO[o.k].nome:"melhoria"}!`}[o.tipo];
+    toast(t,'good');log(`Oferta relâmpago aproveitada: ${t}`,'gold');if(o.tipo==='prensa')sceneLabels();},
+  sellMat:id=>{const m=matrizesDe(S).find(x=>x.id===id);if(!m||S.press.some(q=>q.mat===id))return;S.meta.mats=matrizesDe(S).filter(x=>x!==m);S.cash+=RARIDADES[m.rar].venda;snd('coin');toast(`${nomeMatriz(m)} vendida por ${brl(RARIDADES[m.rar].venda)}.`,'good');},
   sell:id=>{const p=pressById(id);if(!p)return;
     confirmModal(`Vender a Prensa ${p.n} (${PRESSES[p.tipo].t} t) por ${brl(valorVenda(p))}? Se ela estiver com um pedido, ele volta para a fila, e o operador fica livre para outra prensa.`,'sellYes',id,`Vender por ${brl(valorVenda(p))}`);},
   sellYes:id=>{const p=pressById(id);if(!p)return closeModal();const n=p.n,t=PRESSES[p.tipo].t;const v=venderPrensa(S,id);closeModal();
@@ -1603,6 +1898,7 @@ function assignOp(p,sid){
 }
 document.addEventListener('change',e=>{
   const el=e.target;if(!S)return;
+  if(el.dataset.act==='setmat'){const p=pressById(el.dataset.arg);if(p){p.mat=el.value||null;const m=matrizDaPrensa(S,p);snd('click');if(m){const c=pressCenter(p);floatAt(c.x,c.y,nomeMatriz(m),'good');}sceneLabels();}el.blur();sig='';save();if(modal==='press')showPress(p.id);return;}
   if(el.dataset.act==='setop'){const p=pressById(el.dataset.arg);if(p){assignOp(p,el.value);}el.blur();sig='';save();if(modal==='press')showPress(p.id);}
   if(el.dataset.act==='setpress'){const s=staffById(el.dataset.arg);if(!s)return;S.press.forEach(x=>{if(x.op===s.id)x.op=null;});const p=pressById(el.value);if(p)assignOp(p,s.id);el.blur();sig='';save();showStaff(s.id);}
 });
@@ -1621,13 +1917,14 @@ let lastT=performance.now(),lastDraw=0,lastPort=0,lastRank=performance.now()-900
 function loop(now){
   let real=(now-lastT)/1000;lastT=now;real=clamp(real,0,0.5);
   if(S){
-    if(!S.over&&S.speed>0&&!S.audPending&&!['audit','start','over','confirm'].includes(modal)){
+    if(!S.over&&S.speed>0&&!S.audPending&&!['audit','start','over','confirm','offline','daily'].includes(modal)){
       let g=real*4*S.speed;
       while(g>1e-9){const st=Math.min(2,g);simStep(S,st,ev);g-=st;if(S.audPending)break;}
       checkMissions();checkNivel();
       if(S.cash<BANKRUPT)S.over=true;
     }
-    if(!['audit','over','start'].includes(modal)){if(S.over){closeModal();showOver();}else if(S.audPending){closeModal();showAudit();}}
+    if(!modal&&FILA.length){FILA.shift()();}
+    else if(!['audit','over','start','offline','daily'].includes(modal)){if(S.over){closeModal();showOver();}else if(S.audPending){closeModal();showAudit();}}
     const s=signature();
     const selFocus=document.activeElement&&['SELECT','INPUT'].includes(document.activeElement.tagName);
     if(s!==sig&&!selFocus&&!pressing){sig=s;render();}else updateLive();
@@ -1639,9 +1936,16 @@ function loop(now){
   }
   requestAnimationFrame(loop);
 }
-document.addEventListener('visibilitychange',()=>{if(document.hidden)save();});
+let escondidoEm=0;
+document.addEventListener('visibilitychange',()=>{
+  if(document.hidden){save();escondidoEm=Date.now();}
+  else if(S&&escondidoEm){const seg=(Date.now()-escondidoEm)/1000;escondidoEm=0;voltarDeFora(seg);checkDiario();sig='';}
+});
 S=loadSave();
 if(S){
+  normalizar(S);
+  if(S.savedAt)voltarDeFora((Date.now()-S.savedAt)/1000);
+  checkDiario();
   if(rankLigado()&&!JOG.apelido){JOG.apelido=limparApelido(S.nome)||'Gerente';saveJog();}
   render();setTimeout(()=>enviarRanking(true),1500);
 }else showStart();
