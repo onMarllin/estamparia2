@@ -506,6 +506,8 @@ function stepPress(S,p,dt,E,ev){
     d.plan+=dt;d.run+=dt;d.prod+=prod;d.ideal+=nominal*dt;d.def+=gen;d.scrap+=scrap;d.esc+=esc;
     S.tot.prod+=prod;
     p.coil=(p.coil??coilSize(p,S))-prod;
+    // abastecimento antecipado: com empilhadeira, a bobina nova chega antes de a atual acabar
+    if(p.coil>0&&p.coil<coilSize(p,S)*0.15&&!p.coilReq&&!p.coilSpare&&temEmpilhadeira(S)){p.coilReq=true;S.ftasks=S.ftasks||[];S.ftasks.push({kind:'bobina',press:p.id,pre:true});}
     if(o.good>=o.qtd) finishOrder(S,p,o,ev);
     if(p.coil<=0&&p.st!=='exped'){p.coil=0;requestCoil(S,p,ev);}
     return;
@@ -513,7 +515,8 @@ function stepPress(S,p,dt,E,ev){
 }
 function requestCoil(S,p,ev){
   p.st='nomat';p.coilPending=true;
-  if(temEmpilhadeira(S)){p.rem=null;p.remTot=0;p.walk=false;S.ftasks=S.ftasks||[];S.ftasks.push({kind:'bobina',press:p.id});}
+  if(p.coilSpare){p.coilSpare=false;p.walk=false;p.rem=THREAD;p.remTot=THREAD;ev('bobina_pedido',{p,walk:false,troca:true});return;}
+  if(temEmpilhadeira(S)){p.rem=null;p.remTot=0;p.walk=false;S.ftasks=S.ftasks||[];if(!p.coilReq){p.coilReq=true;S.ftasks.push({kind:'bobina',press:p.id});}}
   else{p.walk=true;p.rem=WALK_COIL;p.remTot=p.rem;}
   ev('bobina_pedido',{p,walk:p.walk});
 }
@@ -547,18 +550,19 @@ function stepForks(S,dt,ev){
   S.ftasks=S.ftasks.filter(t=>t.kind==='exped'||S.press.some(p=>p.id===t.press));
   if(!forks.length){
     for(const t of S.ftasks){
-      if(t.kind==='bobina'){const p=S.press.find(x=>x.id===t.press);if(p&&p.st==='nomat'&&p.rem==null){p.walk=true;p.rem=WALK_COIL;p.remTot=p.rem;}}
+      if(t.kind==='bobina'){const p=S.press.find(x=>x.id===t.press);if(p){p.coilReq=false;if(p.st==='nomat'&&p.rem==null){p.walk=true;p.rem=WALK_COIL;p.remTot=p.rem;}}}
       else deliver(S,t.order,ev);
     }
     S.ftasks=[];return;
   }
-  S.ftasks.sort((a,b)=>(a.kind==='bobina'?0:1)-(b.kind==='bobina'?0:1));
+  const prio=t=>{if(t.kind==='exped')return 1;if(!t.pre)return 0;const p=S.press.find(x=>x.id===t.press);return p&&p.st==='nomat'&&p.rem==null?0:2;};
+  S.ftasks.sort((a,b)=>prio(a)-prio(b));
   for(const f of forks){if(S.fbusy[f.id]||!S.ftasks.length)continue;const task=S.ftasks.shift();const d=forkDur(f,task.kind,S);S.fbusy[f.id]={task,rem:d,tot:d};}
   for(const sid in S.fbusy){
     const b=S.fbusy[sid];b.rem-=dt;
     if(b.rem<=0){
       delete S.fbusy[sid];const t=b.task;
-      if(t.kind==='bobina'){const p=S.press.find(x=>x.id===t.press);if(p&&p.st==='nomat'&&p.rem==null){p.rem=THREAD;p.remTot=THREAD;}}
+      if(t.kind==='bobina'){const p=S.press.find(x=>x.id===t.press);if(p){p.coilReq=false;if(p.st==='nomat'&&p.rem==null){p.rem=THREAD;p.remTot=THREAD;}else{p.coilSpare=true;ev('bobina_reserva',{p});}}}
       else deliver(S,t.order,ev);
     }
   }
@@ -907,7 +911,19 @@ function targetFor(s,idx,now){
     return {...forkPark(idx),idle:1};
   }
   const pi=S.press.findIndex(p=>p.op===s.id);
-  if(s.role==='operador'){if(pi>=0){const {x0,y0}=slotXY(pi);return {x:x0+3,y:y0+SC.ROWH-2,work:S.press[pi].st==='run',face:1,at:pi};}return {...idleSpot(s,idx),idle:1};}
+  if(s.role==='operador'){if(pi>=0){const p=S.press[pi];const {x0,y0}=slotXY(pi);
+    const casa={x:x0+3,y:y0+SC.ROWH-2,face:1,at:pi};
+    // sem empilhadeira: vai de paleteira buscar a bobina no estoque e levar o pedido à expedição
+    if(p.st==='nomat'&&p.walk&&p.rem!=null&&p.remTot>0){const ph=1-p.rem/p.remTot;
+      if(ph<0.45)return {x:30+(idx%3)*5,y:SC.DOCK+19,face:-1,trip:1,jack:null};
+      if(ph<0.9)return {...casa,trip:1,jack:'coil'};
+      return {...casa,work:1};}
+    if(p.st==='exped'&&p.rem!=null&&p.remTot>0){const ph=1-p.rem/p.remTot;
+      if(ph<0.5)return {x:DOCKX-16-(idx%3)*5,y:SC.DOCK+20,face:1,trip:1,jack:'pallet'};
+      return {...casa,trip:1,jack:null};}
+    if(p.st==='nomat'&&p.coilPending&&p.rem!=null&&!p.atraso)return {...casa,work:1};
+    return {...casa,work:p.st==='run'};}
+    return {...idleSpot(s,idx),idle:1};}
   if(s.role==='preparador'){const k=S.press.findIndex(p=>p.prep===s.id&&p.st==='setup');if(k>=0){const {x0,y0}=slotXY(k);return {x:x0+17,y:y0+SC.ROWH+8,work:1,at:k};}return {...idleSpot(s,idx),idle:1};}
   if(s.role==='tecnico'){const k=S.press.findIndex(p=>p.tec===s.id&&(p.st==='broken'||p.st==='pm'));if(k>=0){const {x0,y0}=slotXY(k);return {x:x0+22,y:y0+SC.ROWH+8,work:1,at:k};}return {...idleSpot(s,idx),idle:1};}
   // patrulha
@@ -941,7 +957,7 @@ function sceneUpdate(now,dt){
     if(!e){const sp=idleSpot(s,idx);e=Scene.ents[s.id]={x:SC.W-6,y:SC.DOCK+22,path:[],tx:null,ty:null,face:-1,ph:Math.random()*1000};if(!t.idle){e.x=t.x;e.y=t.y;}}
     if(e.tx!==t.x||e.ty!==t.y){e.tx=t.x;e.ty=t.y;e.path=pathTo(e,t);}
     e.tgt=t;
-    const sp=24*(S.speed>=3?1.6:1)*(s.role==='empilhadeira'?2.4*Math.max(1,S.speed/1.2):1)*dt;
+    const sp=24*(S.speed>=3?1.6:1)*(s.role==='empilhadeira'?2.4*Math.max(1,S.speed/1.2):1)*(t.trip?Math.max(1.5,(S.speed||1)*1.3):1)*dt;
     let rem=sp;
     while(rem>0&&e.path.length){
       const q=e.path[0];const dx=q.x-e.x,dy=q.y-e.y;const d=Math.hypot(dx,dy);
@@ -1001,6 +1017,7 @@ function sceneDraw(cv,now){
   for(let i=0;i<8;i++){
     const {x0,y0}=slotXY(i);const p=S.press[i];
     if(p)list.push({y:y0+SC.ROWH-3,d:()=>{
+      drawCoilStand(c,x0,y0,p,RM?0:now);
       drawPressSm(c,x0+15,y0+10,p,RM?0:now,spd);
       const o=orderById(p.ped);
       F(x0+15,y0+SC.ROWH+2,26,3,'#15191e');
@@ -1024,6 +1041,7 @@ function sceneDraw(cv,now){
       if(s.role==='empilhadeira'){drawForklift(c,e.x,e.y,s,e.face||1,e.tgt?e.tgt.carry:null,t);return;}
       const X=Math.round(e.x-5),Y=Math.round(e.y-16)+bob;
       F(X+2,Math.round(e.y)-1,7,2,'#00000044');
+      if(e.tgt&&e.tgt.trip)drawJack(c,X,Y,e.face||1,e.tgt.jack);
       drawGuy(c,X,Y,s,{face:e.face,walk:e.walking,step:Math.floor(t/150)%2,work:e.tgt?.work&&!e.walking,arm:Math.floor(t/(s.role==='operador'?260:330))%2,blink:Math.floor(t/100)%38===0});
       if(s.role==='operador'&&e.tgt&&!e.walking){const p=S.press.find(x=>x.op===s.id);if(p&&p.st==='idle')zzz(c,X+7,Y-5,now);}
       if(e.lvUp&&now<e.lvUp)star(c,X+3,Y-7,now);
@@ -1046,6 +1064,36 @@ function drawForklift(c,cx,fy,s,face,carry,t){
   F(6,-2+lift,7,1,'#aab4bd');
   if(carry==='coil'){for(let yy=-3;yy<=3;yy++)for(let xx=-3;xx<=3;xx++){const d=xx*xx+yy*yy;if(d<=10){F(10+xx,-6+lift+yy,1,1,d<=1?'#3a4048':d<=4?'#c3ccd4':'#9aa6b1');}}}
   if(carry==='pallet'){F(6,-3+lift,7,1,'#8a5a2b');F(6,-8+lift,7,5,'#b98a4e');F(9,-8+lift,1,5,'#8a5a2b');F(6,-6+lift,7,1,'#8a5a2b');}
+}
+// rolo de aço: anel externo, miolo e eixo
+function rolo(F,cx,cy,r,ext,mid){const R=Math.ceil(r);for(let yy=-R;yy<=R;yy++)for(let xx=-R;xx<=R;xx++){const d=xx*xx+yy*yy;if(d>r*r)continue;
+  F(cx+xx,cy+yy,1,1,d<=1?'#3a4048':d>=(r-1)*(r-1)?ext:(d%5===0?'#aab4bd':mid));}}
+// desbobinador ao lado da prensa: o rolo diminui conforme a prensa consome
+function drawCoilStand(c,x0,y0,p,now){
+  const F=(x,y,w,h,col)=>{c.fillStyle=col;c.fillRect(Math.round(x),Math.round(y),w,h);};
+  const cs=coilSize(p,S);
+  const montando=p.st==='nomat'&&p.coilPending&&p.rem!=null&&!p.atraso&&(!p.walk||(p.remTot>0&&1-p.rem/p.remTot>=0.9));
+  const fr=montando?1:p.st==='nomat'&&p.coilPending?0:Math.max(0,Math.min(1,(p.coil??cs)/cs));
+  const cx=x0+8,cy=y0+18;
+  F(cx-4,y0+27,9,2,'#3a3f47');F(cx-4,y0+27,9,1,'#5a616b');F(cx,cy,1,9,'#5a616b');
+  if(fr>0){
+    const r=1.6+3.6*fr,low=fr<0.15&&!montando,pisca=low&&Math.floor(now/350)%2===0;
+    // fita de aço entrando na prensa
+    if(p.st!=='nomat'||montando){const x1=x0+18,y1=y0+32,xa=cx+1,ya=cy+Math.round(r);const n=Math.max(1,x1-xa);
+      for(let k=0;k<=n;k++)F(xa+k,ya+Math.round((y1-ya)*k/n),1,1,'#c9d3da');
+      if(p.st==='run'){const k=Math.floor(now/90)%(n+1);F(xa+k,ya+Math.round((y1-ya)*k/n),1,1,'#6d7a87');}}
+    rolo(F,cx,cy,r,pisca?'#f0923a':low?'#c46a2a':'#8d99a5',pisca?'#ffb46a':'#c3ccd4');
+  }else{F(cx-1,cy-1,3,3,'#3a4048');F(cx,cy,1,1,'#6d7a87');}
+  // bobina reserva já deixada pela empilhadeira
+  if(p.coilSpare){F(x0+9,y0+43,7,1,'#8a5a2b');rolo(F,x0+12,y0+39,3.2,'#8d99a5','#c3ccd4');}
+}
+// paleteira empurrada pelo operador
+function drawJack(c,X,Y,face,load){
+  const G=(a,b,w,h,col)=>{c.fillStyle=col;c.fillRect(face===-1?X+9-(a+w-1):X+a,Y+b,w,h);};
+  G(9,8,2,1,'#2b2f3a');G(10,9,1,5,'#d04a42');
+  G(10,13,9,1,'#d04a42');G(10,14,9,1,'#8a2a24');G(11,15,2,1,'#15191e');G(17,15,2,1,'#15191e');
+  if(load==='coil'){const cx=face===-1?X-5:X+14;rolo((x,y,w,h,col)=>{c.fillStyle=col;c.fillRect(x,y,w,h);},cx,Y+9,3.5,'#8d99a5','#c3ccd4');}
+  if(load==='pallet'){G(11,12,7,1,'#8a5a2b');G(11,8,7,4,'#b98a4e');G(11,10,7,1,'#8a5a2b');G(14,8,1,4,'#8a5a2b');G(12,7,2,1,'#c9d3da');G(15,7,2,1,'#c9d3da');}
 }
 function bubble(c,x,y,ch,col){
   const F=(a,b,w,h,cc)=>{c.fillStyle=cc;c.fillRect(x+a,y+b,w,h);};
@@ -1175,7 +1223,8 @@ function ev(type,d){
     case 'bobina_pedido':{const c=pressCenter(d.p);
       if(d.walk){floatAt(c.x,c.y,'Fui buscar bobina!','bad');log(`Acabou a bobina da ${pn(d.p)}. Sem empilhadeira, o operador foi buscar a pé.`,'warn');
         if(!S.dicaEmp){S.dicaEmp=1;toast('Dica: um operador de empilhadeira traz a bobina em minutos. Contrate na aba Equipe.','warn');}}
-      else floatAt(c.x,c.y,'Bobina!','info');break;}
+      else if(!d.troca)floatAt(c.x,c.y,'Bobina!','info');break;}
+    case 'bobina_reserva':{const c=pressCenter(d.p);floatAt(c.x,c.y,'Bobina reserva','info');break;}
     case 'bobina_fim':{const c=pressCenter(d.p);floatAt(c.x,c.y,'Bobina nova!','good');break;}
     case 'pronto':{const c=pressCenter(d.p);floatAt(c.x,c.y,d.fork?'Pedido pronto!':'Levando a pé...',d.fork?'good':'bad');
       if(!d.fork)log(`Pedido pronto na ${pn(d.p)}. Sem empilhadeira, o operador está levando a pé até a expedição.`,'warn');break;}
@@ -1517,7 +1566,7 @@ function live(k){
     case 'lvnext':{const n=nivelDe(S.tot.receita||0);return `faltam ${brl(recDoNivel(n+1)-(S.tot.receita||0))} de faturamento para o nível ${n+1}`;}
     case 'pst':{const p=pressById(id);return p?pressState(p):'';}
     case 'pcond':{const p=pressById(id);return p?`${Math.round(p.cond)}%`:'';}
-    case 'pcoil':{const p=pressById(id);return p?`dá para mais ${num(Math.max(0,p.coil??coilSize(p,S)))} peças`:'';}
+    case 'pcoil':{const p=pressById(id);return p?`dá para mais ${num(Math.max(0,p.coil??coilSize(p,S)))} peças${p.coilSpare?', a próxima já está do lado':p.coilReq&&p.st!=='nomat'?', empilhadeira trazendo a próxima':''}`:'';}
     case 'oprog':{const o=orderById(id);return o?`${num(Math.min(o.good,o.qtd))} de ${num(o.qtd)} peças`:'';}
     case 'oppm':{const o=orderById(id);if(!o)return '';return o.good>0?`Peças ruins até agora: ${num(o.esc/Math.max(1,o.good)*1e6)} PPM (cliente aceita ${num(o.ppm)})`:`Cliente aceita até ${num(o.ppm)} PPM`;}
     case 'odue':{const o=orderById(id);if(!o)return '';const r=o.due-S.t;return r>=0?`Entrega em ${dur(r)}`:`Atrasado ${dur(-r)}`;}
