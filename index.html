@@ -278,9 +278,17 @@ const ROLES={
   lider:{nome:'Líder de célula',pl:'Líderes',sal:650,cob:4,desc:'Cada líder acompanha até 4 prensas: aumenta o ritmo (performance) e faz os operadores ganharem experiência mais rápido.'},
   inspetor:{nome:'Inspetor de qualidade',pl:'Inspetores',sal:480,cob:3,desc:'Cada inspetor cobre até 3 prensas e segura peças com defeito antes de saírem para o cliente. Também acelera o 8D.'},
   tecnico:{nome:'Técnico de manutenção',pl:'Técnicos',sal:550,cob:3,desc:'Cada técnico cobre até 3 prensas: faz preventiva sozinho quando a condição cai e conserta quebras mais rápido.'},
+  empilhadeira:{nome:'Operador de empilhadeira',pl:'Operadores de empilhadeira',sal:400,desc:'Traz a bobina do estoque até a prensa e leva o pedido pronto até a expedição. Sem ele, o operador da prensa vai a pé buscar a bobina e entregar o pedido, e a prensa fica parada bem mais tempo.'},
   metrologista:{nome:'Metrologista',pl:'Metrologistas',sal:700,cob:99,desc:'Mantém os instrumentos calibrados e o MSA em dia. A inspeção fica mais confiável em toda a planta, e a auditoria cobra essa função.'}
 };
-const ROLE_ORDER=['operador','preparador','lider','inspetor','tecnico','metrologista'];
+const ROLE_ORDER=['operador','preparador','empilhadeira','lider','inspetor','tecnico','metrologista'];
+// ---------- bobina, empilhadeira e expedição ----------
+const COIL={p400:6000,p600:4500,p800:3000};
+const coilSize=p=>COIL[p.tipo]||3000;
+const WALK_COIL=60, WALK_EXP=35, THREAD=5;
+const forkDur=(s,kind)=>Math.max(5,(kind==='bobina'?11:9)*(1-0.06*(effLv(s)-1))*(s.trait==='rapido'?0.8:1));
+const temEmpilhadeira=S=>S.staff.some(s=>s.role==='empilhadeira');
+const valorVenda=p=>Math.round(PRESSES[p.tipo].preco*0.6*(0.5+0.5*p.cond/100)/1000)*1000;
 const NOMES=['João','Maria','José','Ana','Francisco','Antônia','Carlos','Francisca','Paulo','Adriana','Pedro','Juliana','Lucas','Márcia','Luiz','Fernanda','Marcos','Patrícia','Rafael','Aline','Severino','Josefa','Raimundo','Luciana','Daniel','Cícera','Tiago','Rita','Edson','Bruna','Gilberto','Sônia','Wellington','Débora','Reginaldo','Priscila'];
 const SOBRE=['Silva','Santos','Oliveira','Souza','Lima','Pereira','Ferreira','Costa','Rodrigues','Almeida','Nascimento','Araújo','Barbosa','Cavalcanti','Melo'];
 
@@ -346,7 +354,7 @@ const opDefMult=lv=>1.2-0.06*(lv-1);
 const condDefMult=c=>1+(100-c)/60;
 const hazard=(c,S)=>(1/5000)*(1+Math.pow((100-c)/25,2))*(1-0.1*tec(S,'preditiva'))*(1+0.1*(uniDe(S)-1));
 
-function newDay(){return {plan:0,run:0,prod:0,ideal:0,def:0,scrap:0,esc:0,brk:0,loss:{setup:0,brk:0,mat:0,pm:0,noop:0}};}
+function newDay(){return {plan:0,run:0,prod:0,ideal:0,def:0,scrap:0,esc:0,brk:0,loss:{setup:0,brk:0,mat:0,log:0,pm:0,noop:0}};}
 
 function makeOrder(S,forceT){
   const maxT=Math.max(400,...S.press.map(p=>PRESSES[p.tipo].t));
@@ -368,10 +376,13 @@ function stepPress(S,p,dt,E,ev){
   while(dt>1e-6&&guard++<8){
     const o=p.ped?S.orders.find(x=>x.id===p.ped):null;
     const d=p.day;
-    if(['setup','broken','pm','nomat'].includes(p.st)){
+    if(p.st==='nomat'&&p.rem==null){if(o){d.plan+=dt;d.loss.mat+=dt;}return;}
+    if(['setup','broken','pm','nomat','exped'].includes(p.st)){
       const use=Math.min(dt,p.rem); p.rem-=use; dt-=use;
-      if(o){d.plan+=use; d.loss[{setup:'setup',broken:'brk',pm:'pm',nomat:'mat'}[p.st]]+=use;}
+      if(o){d.plan+=use; d.loss[{setup:'setup',broken:'brk',pm:'pm',nomat:'mat',exped:'log'}[p.st]]=(d.loss[{setup:'setup',broken:'brk',pm:'pm',nomat:'mat',exped:'log'}[p.st]]||0)+use;}
       if(p.rem<=1e-6){
+        if(p.st==='nomat'){if(p.coilPending){p.coil=coilSize(p);p.coilPending=false;ev('bobina_fim',{p,walk:p.walk});}p.walk=false;p.atraso=false;}
+        if(p.st==='exped'){const eo=p.expOrder;p.expOrder=null;if(eo)deliver(S,eo,ev);}
         if(p.st==='setup'){p.part=p.setupPart; if(p.prep){S.prepBusy=S.prepBusy.filter(x=>x!==p.prep);p.prep=null;} ev('setup_fim',{p});}
         if(p.st==='pm'){p.cond=100;p.tec=null;ev('pm_fim',{p});}
         if(p.st==='broken'){p.cond=Math.max(p.cond,75);p.tec=null;ev('reparo_fim',{p});}
@@ -415,11 +426,26 @@ function stepPress(S,p,dt,E,ev){
     p.cond=Math.max(0,p.cond-dt/40);
     d.plan+=dt;d.run+=dt;d.prod+=prod;d.ideal+=PRESSES[p.tipo].gpm*dt;d.def+=gen;d.scrap+=scrap;d.esc+=esc;
     S.tot.prod+=prod;
+    p.coil=(p.coil??coilSize(p))-prod;
     if(o.good>=o.qtd) finishOrder(S,p,o,ev);
+    if(p.coil<=0&&p.st!=='exped'){p.coil=0;requestCoil(S,p,ev);}
     return;
   }
 }
+function requestCoil(S,p,ev){
+  p.st='nomat';p.coilPending=true;
+  if(temEmpilhadeira(S)){p.rem=null;p.remTot=0;p.walk=false;S.ftasks=S.ftasks||[];S.ftasks.push({kind:'bobina',press:p.id});}
+  else{p.walk=true;p.rem=WALK_COIL;p.remTot=p.rem;}
+  ev('bobina_pedido',{p,walk:p.walk});
+}
 function finishOrder(S,p,o,ev){
+  p.ped=null;o.press=null;
+  S.orders=S.orders.filter(x=>x!==o);
+  if(temEmpilhadeira(S)){S.ftasks=S.ftasks||[];S.ftasks.push({kind:'exped',order:o,press:p.id});ev('pronto',{o,p,fork:true});}
+  else{p.st='exped';p.rem=WALK_EXP;p.remTot=p.rem;p.expOrder=o;ev('pronto',{o,p,fork:false});}
+  autoAssign(S);
+}
+function deliver(S,o,ev){
   const late=S.t>o.due;
   const ppm=o.esc/o.qtd*1e6;
   const receita=o.qtd*o.preco*(late?0.9:1);
@@ -432,10 +458,40 @@ function finishOrder(S,p,o,ev){
   S.hist.push({cli:o.cli,part:o.part,qtd:o.qtd,esc:o.esc,scrap:o.scrap,late,ppm,ppmMax:o.ppm,receita,custoRec,dia:dayOf(S.t)});
   if(S.hist.length>40) S.hist.shift();
   S.tot.ped++; if(!late)S.tot.noPrazo++;
-  p.ped=null;
-  S.orders=S.orders.filter(x=>x!==o);
   ev('entrega',{o,comp,late,ppm,receita,custoRec});
-  autoAssign(S);
+}
+function stepForks(S,dt,ev){
+  S.ftasks=S.ftasks||[];S.fbusy=S.fbusy||{};
+  const forks=S.staff.filter(s=>s.role==='empilhadeira');
+  for(const sid in S.fbusy)if(!forks.some(f=>f.id===sid)){S.ftasks.unshift(S.fbusy[sid].task);delete S.fbusy[sid];}
+  S.ftasks=S.ftasks.filter(t=>t.kind==='exped'||S.press.some(p=>p.id===t.press));
+  if(!forks.length){
+    for(const t of S.ftasks){
+      if(t.kind==='bobina'){const p=S.press.find(x=>x.id===t.press);if(p&&p.st==='nomat'&&p.rem==null){p.walk=true;p.rem=WALK_COIL;p.remTot=p.rem;}}
+      else deliver(S,t.order,ev);
+    }
+    S.ftasks=[];return;
+  }
+  S.ftasks.sort((a,b)=>(a.kind==='bobina'?0:1)-(b.kind==='bobina'?0:1));
+  for(const f of forks){if(S.fbusy[f.id]||!S.ftasks.length)continue;const task=S.ftasks.shift();const d=forkDur(f,task.kind);S.fbusy[f.id]={task,rem:d,tot:d};}
+  for(const sid in S.fbusy){
+    const b=S.fbusy[sid];b.rem-=dt;
+    if(b.rem<=0){
+      delete S.fbusy[sid];const t=b.task;
+      if(t.kind==='bobina'){const p=S.press.find(x=>x.id===t.press);if(p&&p.st==='nomat'&&p.rem==null){p.rem=THREAD;p.remTot=THREAD;}}
+      else deliver(S,t.order,ev);
+    }
+  }
+}
+function venderPrensa(S,id){
+  const i=S.press.findIndex(p=>p.id===id);if(i<=0)return 0;
+  const p=S.press[i];if(p.st==='exped')return 0;
+  if(p.ped){const o=S.orders.find(x=>x.id===p.ped);if(o)o.press=null;}
+  if(p.prep)S.prepBusy=S.prepBusy.filter(x=>x!==p.prep);
+  const v=valorVenda(p);S.cash+=v;
+  S.press.splice(i,1);S.press.forEach((x,k)=>x.n=k+1);
+  S.ftasks=(S.ftasks||[]).filter(t=>t.kind==='exped'||t.press!==id);
+  autoAssign(S);return v;
 }
 function autoAssign(S){
   for(const p of S.press){
@@ -475,10 +531,10 @@ function dayRollover(S,ev){
   const lucro=S.cash-S.cashDay; S.cashDay=S.cash;
   ev('dia',{d,pay,ups,lucro});
   const running=S.press.filter(p=>p.st==='run');
-  if(running.length&&Math.random()<0.3){const p=pick(running);p.st='nomat';p.rem=rint(60,150);p.remTot=p.rem;ev('bobina',{p});}
+  if(running.length&&Math.random()<0.12){const p=pick(running);p.st='nomat';p.rem=rint(40,100);p.remTot=p.rem;p.atraso=true;ev('bobina',{p});}
 }
 function makeCands(S){
-  const roles=['operador','operador','operador','preparador','lider','inspetor','inspetor','tecnico','tecnico','metrologista'];
+  const roles=['operador','operador','operador','preparador','empilhadeira','empilhadeira','lider','inspetor','inspetor','tecnico','tecnico','metrologista'];
   const mx=Math.min(4,1+Math.floor(S.rep/25));
   const out=[makeStaff('operador',rint(1,mx),S)];
   while(out.length<6) out.push(makeStaff(pick(roles),rint(1,mx),S));
@@ -499,6 +555,7 @@ function step8D(S,ev){
 function simStep(S,dt,ev){
   const E=effects(S);
   autoAssign(S);
+  stepForks(S,dt,ev);
   for(const p of S.press) stepPress(S,p,dt,E,ev);
   const before=dayOf(S.t);
   S.t+=dt;
@@ -510,7 +567,7 @@ function newState(nome,meta){
   meta=meta||novaMeta();
   const cash0=120000+50000*(meta.ups.capital||0);
   const S={v:3,meta,cashDay:cash0,nome:nome||'Estamparia Aço Norte',t:6*60,cash:cash0,rep:Math.min(100,10+10*(meta.ups.fama||0)),press:[],staff:[],orders:[],board:[],cands:[],prepBusy:[],hist:[],days:[],comps:[],
-    tot:{prod:0,brk:0,ped:0,noPrazo:0,receita:0},def:{},speed:1,mis:meta.uni>1?999:0,nextAud:7,auds:[],log:[],over:false};
+    tot:{prod:0,brk:0,ped:0,noPrazo:0,receita:0},ftasks:[],fbusy:{},def:{},speed:1,mis:meta.uni>1?999:0,nextAud:7,auds:[],log:[],over:false};
   PARTS.forEach(p=>S.def[p.id]=p.def*(1-0.08*tec(S,'aco'))*(1+0.1*(meta.uni-1)));
   for(const tipo of ['p400','p400','p600','p800'].slice(0,1+tec(S,'galpao'))){
     const p=addPress(S,tipo);const op=makeStaff('operador',1,S);S.staff.push(op);p.op=op.id;
@@ -522,6 +579,7 @@ function newState(nome,meta){
 function freeTec(S){const t=S.staff.find(s=>s.role==='tecnico'&&!S.press.some(p=>p.tec===s.id));return t?t.id:null;}
 function addPress(S,tipo){
   const p={id:uid(),tipo,op:null,tec:null,ped:null,part:null,setupPart:null,st:'idle',rem:0,remTot:0,cond:100,day:newDay(),n:S.press.length+1};
+  p.coil=Math.round(coilSize(p)*rnd(0.4,1));
   S.press.push(p);
   const free=S.staff.find(s=>s.role==='operador'&&!S.press.some(x=>x.op===s.id));
   if(free) p.op=free.id;
@@ -550,12 +608,13 @@ SC.DOCK=SC.TOP+2*(SC.ROWH+SC.AISLE);
 const SKIN=['#f3cba8','#dca47c','#b97c4e','#8e5b37','#5e3a22'];
 const HAIR=['#2b1d14','#5a3a1e','#8a5a2b','#d9b25a','#141414','#b8b8b8'];
 const LOOK={
-  operador:{hel:'#f2c230',sh:'#3f6fb5',pa:'#2b3b5e',st:1},
-  preparador:{hel:'#f2c230',sh:'#e07b2a',pa:'#3b3b44',st:1,tool:'wrench'},
-  lider:{hel:'#f4f4f4',sh:'#3f8f55',pa:'#2b3d2f',tool:'board'},
-  inspetor:{hel:'#4d9de0',sh:'#e9edf0',pa:'#394451',tool:'board'},
-  tecnico:{hel:'#e5534b',sh:'#6b7480',pa:'#373c44',st:1,tool:'wrench'},
-  metrologista:{hel:null,sh:'#f7f7f7',pa:'#34425a',tool:'caliper',glasses:1}
+  operador:{hel:'#f4f4f4',sh:'#c3cad1',pa:'#2b3b5e',st:1},
+  preparador:{hel:'#f4f4f4',sh:'#c3cad1',pa:'#3b3b44',st:1,tool:'wrench'},
+  lider:{hel:'#f4f4f4',sh:'#d04a42',pa:'#2b2f3a',tool:'board'},
+  inspetor:{hel:'#f4f4f4',sh:'#8fdc98',pa:'#394451',tool:'board'},
+  tecnico:{hel:'#f4f4f4',sh:'#4b535d',pa:'#2a2e35',st:1,tool:'wrench'},
+  metrologista:{hel:null,sh:'#2f7a45',pa:'#34425a',tool:'caliper',glasses:1},
+  empilhadeira:{hel:'#f4f4f4',sh:'#3f6fb5',pa:'#2b3b5e',st:1}
 };
 const PCOL={p400:['#3f6f9e','#6a98c6','#2c4f73'],p600:['#4d8a5c','#74b183','#356441'],p800:['#a4513b','#cc7a62','#76382a']};
 
@@ -582,7 +641,6 @@ function drawGuy(c,X,Y,s,o){
   P(4,7,2,1,sk);P(2,7,2,1,L.sh);P(6,7,2,1,L.sh);
   P(2,8,6,4,L.sh);
   if(L.st)P(2,10,6,1,'#d4dde3');
-  if(s.role==='inspetor'||s.role==='metrologista')P(4,8,2,4,'#cfd7de');
   // braços
   const up=o.work&&o.arm;
   if(up){P(1,6,1,3,L.sh);P(8,6,1,3,L.sh);P(1,5,1,1,sk);P(8,5,1,1,sk);}
@@ -621,7 +679,7 @@ function drawPressSm(c,x,y,p,t,spd){
   // andon
   F(22,-7,3,9,'#0a0d10');
   const bl=Math.floor(t/400)%2===0;
-  const on={run:[0,0,1],setup:[0,1,0],nomat:[0,bl,0],broken:[bl,0,0],noop:[1,0,0]}[p.st]||[0,0,0];
+  const on={run:[0,0,1],setup:[0,1,0],nomat:[0,bl,0],exped:[0,bl,0],broken:[bl,0,0],noop:[1,0,0]}[p.st]||[0,0,0];
   const LC=[['#ec5a50','#3a1614'],['#f2c230','#3a3010'],['#5cc26b','#15321a']];
   LC.forEach((cc,i)=>F(23,-6+i*3,1,2,on[i]?cc[0]:cc[1]));
   if(p.st==='pm')F(23,-6,1,8,bl?'#55a3e6':'#1a3550');
@@ -634,7 +692,18 @@ const walkY=row=>row>=2?SC.DOCK+17:SC.TOP+row*(SC.ROWH+SC.AISLE)+SC.ROWH+9;
 const rowOfY=y=>y>=SC.DOCK?2:Math.min(1,Math.floor((y-SC.TOP-1)/(SC.ROWH+SC.AISLE)));
 const IDLE={operador:[10,20,30,40],preparador:[52,60],tecnico:[70,78],lider:[88],inspetor:[96,104],metrologista:[112]};
 function idleSpot(s,i){const a=IDLE[s.role]||[20];return {x:a[i%a.length]+(Math.floor(i/a.length)*5)%12,y:SC.DOCK+22};}
+const forkPark=i=>({x:34+i*16,y:SC.DOCK+12});
 function targetFor(s,idx,now){
+  if(s.role==='empilhadeira'){
+    const b=(S.fbusy||{})[s.id];
+    if(b){
+      const ph=1-b.rem/Math.max(0.01,b.tot),k=S.press.findIndex(p=>p.id===b.task.press);
+      const frente=()=>{const {x0,y0}=slotXY(k);return {x:x0+30,y:y0+SC.ROWH+8};};
+      if(b.task.kind==='bobina')return ph<0.6&&k>=0?{...frente(),carry:'coil'}:{...forkPark(idx),carry:null};
+      return ph<0.45&&k>=0?{...frente(),carry:null}:{x:DOCKX-8,y:SC.DOCK+20,carry:'pallet'};
+    }
+    return {...forkPark(idx),idle:1};
+  }
   const pi=S.press.findIndex(p=>p.op===s.id);
   if(s.role==='operador'){if(pi>=0){const {x0,y0}=slotXY(pi);return {x:x0+3,y:y0+SC.ROWH-2,work:S.press[pi].st==='run',face:1,at:pi};}return {...idleSpot(s,idx),idle:1};}
   if(s.role==='preparador'){const k=S.press.findIndex(p=>p.prep===s.id&&p.st==='setup');if(k>=0){const {x0,y0}=slotXY(k);return {x:x0+17,y:y0+SC.ROWH+8,work:1,at:k};}return {...idleSpot(s,idx),idle:1};}
@@ -670,7 +739,7 @@ function sceneUpdate(now,dt){
     if(!e){const sp=idleSpot(s,idx);e=Scene.ents[s.id]={x:SC.W-6,y:SC.DOCK+22,path:[],tx:null,ty:null,face:-1,ph:Math.random()*1000};if(!t.idle){e.x=t.x;e.y=t.y;}}
     if(e.tx!==t.x||e.ty!==t.y){e.tx=t.x;e.ty=t.y;e.path=pathTo(e,t);}
     e.tgt=t;
-    const sp=24*(S.speed>=3?1.6:1)*dt;
+    const sp=24*(S.speed>=3?1.6:1)*(s.role==='empilhadeira'?2.4*Math.max(1,S.speed/1.2):1)*dt;
     let rem=sp;
     while(rem>0&&e.path.length){
       const q=e.path[0];const dx=q.x-e.x,dy=q.y-e.y;const d=Math.hypot(dx,dy);
@@ -712,7 +781,7 @@ function sceneDraw(cv,now){
   F(0,SC.DOCK,W,H-SC.DOCK,T.doca);for(let x=0;x<W;x+=6)F(x,SC.DOCK,3,1,'#f2c230');
   // estante e bancada
   F(3,SC.DOCK+3,22,12,'#5a4633');F(3,SC.DOCK+8,22,1,'#3a2c20');
-  [[4,4,'#b98a4e'],[10,4,'#8fa9c0'],[17,4,'#b98a4e'],[5,9,'#8fa9c0'],[12,9,'#b98a4e'],[19,9,'#c9d3da']].forEach(([a,b,col])=>F(a,SC.DOCK+b,5,4,col));
+  for(const [a,b] of [[6,5],[13,5],[20,5],[9,11],[17,11]]){for(let yy=-2;yy<=2;yy++)for(let xx=-2;xx<=2;xx++){const d=xx*xx+yy*yy;if(d<=5)F(a+xx,SC.DOCK+b+yy,1,1,d<=1?'#3a4048':d<=2?'#c3ccd4':'#9aa6b1');}}
   F(118,SC.DOCK+6,20,4,'#6b5a45');F(118,SC.DOCK+10,2,6,'#4a3d2f');F(136,SC.DOCK+10,2,6,'#4a3d2f');F(122,SC.DOCK+4,4,2,'#c9d3da');F(129,SC.DOCK+3,3,3,'#e5534b');
   // porta da doca
   F(W-10,SC.DOCK+2,10,H-SC.DOCK-2,'#15191e');for(let y=SC.DOCK+2;y<H;y+=4)F(W-10,y,10,2,y%8<4?'#f2c230':'#15191e');
@@ -750,6 +819,7 @@ function sceneDraw(cv,now){
     list.push({y:e.y,d:()=>{
       const t=RM?0:now+e.ph;
       const bob=!e.walking&&!e.tgt?.work&&Math.floor(t/700)%2?1:0;
+      if(s.role==='empilhadeira'){drawForklift(c,e.x,e.y,s,e.face||1,e.tgt?e.tgt.carry:null,t);return;}
       const X=Math.round(e.x-5),Y=Math.round(e.y-16)+bob;
       F(X+2,Math.round(e.y)-1,7,2,'#00000044');
       drawGuy(c,X,Y,s,{face:e.face,walk:e.walking,step:Math.floor(t/150)%2,work:e.tgt?.work&&!e.walking,arm:Math.floor(t/(s.role==='operador'?260:330))%2,blink:Math.floor(t/100)%38===0});
@@ -759,6 +829,21 @@ function sceneDraw(cv,now){
   }
   list.sort((a,b)=>a.y-b.y).forEach(o=>o.d());
   for(const p of Scene.parts)F(p.x,p.y,p.s||2,p.s||2,p.c);
+}
+function drawForklift(c,cx,fy,s,face,carry,t){
+  cx=Math.round(cx);fy=Math.round(fy);
+  const F=(x,y,w,h,col)=>{c.fillStyle=col;c.fillRect(face===-1?cx-x-w:cx+x,fy+y,w,h);};
+  F(-9,-1,20,2,'#00000044');
+  drawGuy(c,face===-1?cx-1:cx-9,fy-21,s,{face,blink:Math.floor(t/100)%41===0});
+  F(-8,-22,1,12,'#3a3f47');F(1,-22,1,12,'#3a3f47');F(-8,-22,10,1,'#3a3f47');
+  F(-10,-11,3,8,'#3a3f47');
+  F(-8,-10,12,7,'#f2c230');F(-8,-10,12,1,'#ffe07a');F(-8,-4,12,1,'#9c7a14');F(-6,-8,3,2,'#1b1420');
+  F(-7,-3,4,3,'#15191e');F(0,-3,4,3,'#15191e');F(-6,-2,2,1,'#6d7a87');F(1,-2,2,1,'#6d7a87');
+  const lift=carry?-4:0;
+  F(5,-20,2,18,'#6d7a87');F(6,-20,1,18,'#95a3b0');
+  F(6,-2+lift,7,1,'#aab4bd');
+  if(carry==='coil'){for(let yy=-3;yy<=3;yy++)for(let xx=-3;xx<=3;xx++){const d=xx*xx+yy*yy;if(d<=10){F(10+xx,-6+lift+yy,1,1,d<=1?'#3a4048':d<=4?'#c3ccd4':'#9aa6b1');}}}
+  if(carry==='pallet'){F(6,-3+lift,7,1,'#8a5a2b');F(6,-8+lift,7,5,'#b98a4e');F(9,-8+lift,1,5,'#8a5a2b');F(6,-6+lift,7,1,'#8a5a2b');}
 }
 function bubble(c,x,y,ch,col){
   const F=(a,b,w,h,cc)=>{c.fillStyle=cc;c.fillRect(x+a,y+b,w,h);};
@@ -883,7 +968,14 @@ function ev(type,d){
     case 'pm':{log(`Técnico começou a revisão da ${pn(d.p)}.`,'info');break;}
     case 'pm_fim':{const c=pressCenter(d.p);floatAt(c.x,c.y,'Revisada!','info');log(`${pn(d.p)} revisada, novinha em folha.`,'info');break;}
     case 'setup_fim':{const c=pressCenter(d.p);floatAt(c.x,c.y,'Setup pronto!','info');break;}
-    case 'bobina':{const c=pressCenter(d.p);floatAt(c.x,c.y,'Cadê a bobina?','bad');snd('warn');const m=`Acabou a bobina de aço na ${pn(d.p)}. Parada esperando material.`;log(m,'warn');toast(m,'warn');break;}
+    case 'bobina':{const c=pressCenter(d.p);floatAt(c.x,c.y,'Cadê a bobina?','bad');snd('warn');const m=`O fornecedor atrasou a bobina da ${pn(d.p)}. Parada esperando material.`;log(m,'warn');toast(m,'warn');break;}
+    case 'bobina_pedido':{const c=pressCenter(d.p);
+      if(d.walk){floatAt(c.x,c.y,'Fui buscar bobina!','bad');log(`Acabou a bobina da ${pn(d.p)}. Sem empilhadeira, o operador foi buscar a pé.`,'warn');
+        if(!S.dicaEmp){S.dicaEmp=1;toast('Dica: um operador de empilhadeira traz a bobina em minutos. Contrate na aba Equipe.','warn');}}
+      else floatAt(c.x,c.y,'Bobina!','info');break;}
+    case 'bobina_fim':{const c=pressCenter(d.p);floatAt(c.x,c.y,'Bobina nova!','good');break;}
+    case 'pronto':{const c=pressCenter(d.p);floatAt(c.x,c.y,d.fork?'Pedido pronto!':'Levando a pé...',d.fork?'good':'bad');
+      if(!d.fork)log(`Pedido pronto na ${pn(d.p)}. Sem empilhadeira, o operador está levando a pé até a expedição.`,'warn');break;}
     case 'dia':{
       const last=S.days[S.days.length-1];if(last)last.lucro=d.lucro;
       const m=`Fim do dia ${d.d}: ${d.lucro>=0?'lucro de':'prejuízo de'} ${brl(Math.abs(d.lucro))}.`;log(m,d.lucro>=0?'good':'bad');toast(m,d.lucro>=0?'good':'bad');
@@ -901,8 +993,8 @@ function ev(type,d){
 const OEE=d=>(d&&d.plan>0&&d.prod>0)?{A:d.run/d.plan,P:d.prod/d.ideal,Q:(d.prod-d.def)/d.prod,get v(){return this.A*this.P*this.Q;}}:null;
 const MISSIONS=[
   {t:'Aceite seu primeiro pedido na aba Pedidos.',r:5000,ok:()=>S.orders.length>0||S.tot.ped>0},
-  {t:'Contrate um inspetor de qualidade (capacete azul).',r:8000,ok:()=>S.staff.some(s=>s.role==='inspetor')},
-  {t:'Contrate um técnico de manutenção (capacete vermelho).',r:8000,ok:()=>hasTec()},
+  {t:'Contrate um inspetor de qualidade (camisa verde clara).',r:8000,ok:()=>S.staff.some(s=>s.role==='inspetor')},
+  {t:'Contrate um técnico de manutenção (camisa cinza escura).',r:8000,ok:()=>hasTec()},
   {t:'Entregue 3 pedidos sem reclamação.',r:15000,ok:()=>S.hist.filter(h=>h.ppm<=h.ppmMax).length>=3},
   {t:'Compre a segunda prensa. É só tocar no quadrado piscando.',r:20000,ok:()=>S.press.length>=2},
   {t:'Resolva uma reclamação com um 8D.',r:15000,ok:()=>S.comps.some(c=>c.st==='fechada')},
@@ -930,6 +1022,7 @@ const TROPHIES=[
   {id:'salto1',n:'Viajante',d:'Salte para outro universo pela primeira vez.',r:0,ok:()=>uniDe(S)>=2},
   {id:'uni5',n:'Andarilho cósmico',d:'Chegue ao universo 5.',r:0,ok:()=>uniDe(S)>=5},
   {id:'tec10',n:'Cientista',d:'Compre 10 níveis de tecnologia.',r:0,ok:()=>Object.values(S.meta.ups||{}).reduce((a,b)=>a+b,0)>=10},
+  {id:'logis',n:'Logística afiada',d:'Tenha 2 operadores de empilhadeira.',r:10000,ok:()=>S.staff.filter(s=>s.role==='empilhadeira').length>=2},
   {id:'nv25',n:'Fábrica lendária',d:'Leve uma fábrica ao nível 25.',r:0,ok:()=>nivelDe(S.tot.receita||0)>=25}
 ];
 function checkNivel(){
@@ -1055,7 +1148,8 @@ function showHelp(){
   openModal(`<h2>Como jogar</h2>
   <ul class="check">
     <li><i class="gold">1</i><div>Aceite pedidos na aba Pedidos. A prensa liga sozinha e o caminhão leva quando termina.</div></li>
-    <li><i class="gold">2</i><div>Contrate a equipe na aba Equipe. Cada capacete é uma função: amarelo opera e prepara, azul inspeciona, vermelho conserta, branco lidera. O metrologista usa jaleco.</div></li>
+    <li><i class="gold">2</i><div>Contrate a equipe na aba Equipe. A cor da camisa mostra o setor: cinza claro é operador e preparador, verde claro é inspetor, cinza escuro é manutenção, azul é logística (empilhadeira), verde escuro é metrologista e vermelho é líder.</div></li>
+    <li><i class="gold">+</i><div>Cada prensa gasta bobina. A empilhadeira traz bobina nova do estoque e leva o pedido pronto até a expedição. Sem ela, o operador faz isso a pé e a prensa fica parada.</div></li>
     <li><i class="gold">3</i><div>Toque numa prensa ou numa pessoa lá no chão de fábrica para ver detalhes. O quadrado piscando é onde cabe uma prensa nova.</div></li>
     <li><i class="gold">4</i><div>Peça ruim que chega no cliente vira reclamação. Resolva com um 8D no Painel.</div></li>
     <li><i class="gold">5</i><div>A cada 7 dias o auditor aparece. Passe e ganhe bônus.</div></li>
@@ -1092,14 +1186,17 @@ function showPress(id){
     ${o?`<div class="card"><div class="row"><canvas class="px" data-part="${o.part}" width="16" height="16" style="width:32px;height:32px"></canvas><div class="grow"><b>${partById(o.part).nome}</b><div class="tiny">${esc(o.cli)}</div></div></div>
       <div class="bar y"><i data-w="oprog:${o.id}"></i></div><div class="barlab">${L('oprog:'+o.id)}${L('odue:'+o.id)}</div><div class="tiny">${L('oppm:'+o.id)}</div></div>`
       :`<p class="muted">Sem pedido. Aceite um na aba Pedidos e ela liga sozinha.</p>`}
+    <div class="barlab"><span>Bobina</span>${L('pcoil:'+p.id)}</div><div class="bar b"><i data-w="pcoil:${p.id}"></i></div>
+    <p class="tiny">${temEmpilhadeira(S)?'A empilhadeira traz bobina nova quando esta acabar.':'Sem empilhadeira, o operador vai a pé buscar bobina e a prensa fica 1 h parada.'}</p>
     <div class="barlab"><span>Saúde da máquina</span>${L('pcond:'+p.id)}</div><div class="bar"><i data-w="pcond:${p.id}"></i></div>
     <p class="tiny">${hasTec()?'Seus técnicos revisam sozinhos quando a saúde cai.':'Sem técnico, a saúde só volta com revisão ou depois de quebrar.'}</p>
-    <div class="row wrap">${pmBtn}<button class="btn ghost" data-act="close">Fechar</button></div>`,'press',id);
+    <div class="row wrap">${pmBtn}${S.press.indexOf(p)>0?`<button class="btn danger" data-act="sell" data-arg="${p.id}" ${p.st==='exped'?'disabled data-lock title="Espere o pedido chegar na expedição"':''}>Vender por ${brl(valorVenda(p))}</button>`:''}<button class="btn ghost" data-act="close">Fechar</button></div>
+    ${S.press.indexOf(p)>0?'<p class="tiny">A venda paga 60% do preço de nova, menos o desgaste da máquina.</p>':'<p class="tiny">A primeira prensa da fábrica não pode ser vendida.</p>'}`,'press',id);
 }
 function showStaff(id){
   const s=staffById(id);if(!s||!S.staff.includes(s))return closeModal();
   const need=xpNeed(s.lv), p=S.press.find(x=>x.op===s.id);
-  const where=s.role==='operador'?(p?`Trabalhando na Prensa ${p.n}`:'Sem prensa, esperando'):({preparador:'Faz o setup das prensas',lider:'Anima o time e acelera o ritmo',inspetor:'Caça peças com defeito',tecnico:'Conserta e revisa as prensas',metrologista:'Cuida das medições'}[s.role]);
+  const where=s.role==='operador'?(p?`Trabalhando na Prensa ${p.n}`:'Sem prensa, esperando'):({preparador:'Faz o setup das prensas',empilhadeira:'Traz bobina e leva os pedidos de empilhadeira',lider:'Anima o time e acelera o ritmo',inspetor:'Caça peças com defeito',tecnico:'Conserta e revisa as prensas',metrologista:'Cuida das medições'}[s.role]);
   const pressSel=s.role==='operador'?`<label class="tiny" for="sp-${s.id}">Prensa</label><select id="sp-${s.id}" data-act="setpress" data-arg="${s.id}"><option value="">Nenhuma</option>${S.press.map(x=>`<option value="${x.id}" ${x.op===s.id?'selected':''}>Prensa ${x.n} (${PRESSES[x.tipo].t} t)${x.op&&x.op!==s.id?', troca com '+esc(first(staffById(x.op)?.nome||'')):''}</option>`).join('')}</select>`:'';
   openModal(`<div class="person"><canvas class="px portrait big" data-portrait="${s.id}" width="12" height="19"></canvas>
     <div style="display:flex;flex-direction:column;gap:6px"><h2>${esc(s.nome)}</h2><div class="muted">${ROLES[s.role].nome}</div>
@@ -1123,10 +1220,16 @@ function showBuy(){
 }
 
 // ---------- valores ao vivo ----------
-const ST_TXT={run:'Produzindo',setup:'Trocando ferramenta',broken:'Quebrada!',pm:'Em revisão',nomat:'Sem bobina de aço',noop:'Sem operador!',idle:'Parada, sem pedido'};
+const ST_TXT={run:'Produzindo',setup:'Trocando ferramenta',broken:'Quebrada!',pm:'Em revisão',nomat:'Sem bobina',exped:'Operador levando o pedido para a expedição',noop:'Sem operador!',idle:'Parada, sem pedido'};
 function pressState(p){
   let t=ST_TXT[p.st]||p.st;
-  if(['setup','broken','pm','nomat'].includes(p.st))t+=`, volta em ${dur(p.rem)}`;
+  if(p.st==='nomat'){
+    if(p.rem==null)return 'Esperando a empilhadeira trazer bobina';
+    if(p.atraso)return `Fornecedor atrasou a bobina, volta em ${dur(p.rem)}`;
+    if(p.walk)return `Operador foi a pé buscar bobina, volta em ${dur(p.rem)}`;
+    return `Colocando bobina nova, volta em ${dur(p.rem)}`;
+  }
+  if(['setup','broken','pm','exped'].includes(p.st))t+=`, volta em ${dur(p.rem)}`;
   if(p.st==='setup'&&!p.prep)t+=' (sem preparador, demora mais)';
   return t;
 }
@@ -1139,6 +1242,7 @@ function live(k){
     case 'lvnext':{const n=nivelDe(S.tot.receita||0);return `faltam ${brl(recDoNivel(n+1)-(S.tot.receita||0))} de faturamento para o nível ${n+1}`;}
     case 'pst':{const p=pressById(id);return p?pressState(p):'';}
     case 'pcond':{const p=pressById(id);return p?`${Math.round(p.cond)}%`:'';}
+    case 'pcoil':{const p=pressById(id);return p?`dá para mais ${num(Math.max(0,p.coil??coilSize(p)))} peças`:'';}
     case 'oprog':{const o=orderById(id);return o?`${num(Math.min(o.good,o.qtd))} de ${num(o.qtd)} peças`:'';}
     case 'oppm':{const o=orderById(id);if(!o)return '';return o.good>0?`Peças ruins até agora: ${num(o.esc/Math.max(1,o.good)*1e6)} PPM (cliente aceita ${num(o.ppm)})`:`Cliente aceita até ${num(o.ppm)} PPM`;}
     case 'odue':{const o=orderById(id);if(!o)return '';const r=o.due-S.t;return r>=0?`Entrega em ${dur(r)}`:`Atrasado ${dur(-r)}`;}
@@ -1149,6 +1253,7 @@ function live(k){
 function liveW(k){
   const [a,id]=k.split(':');
   if(a==='pcond'){const p=pressById(id);return p?p.cond:0;}
+  if(a==='pcoil'){const p=pressById(id);return p?Math.max(0,(p.coil??coilSize(p)))/coilSize(p)*100:0;}
   if(a==='lvl'){const n=nivelDe(S.tot.receita||0),a0=recDoNivel(n),a1=recDoNivel(n+1);return ((S.tot.receita||0)-a0)/(a1-a0)*100;}
   if(a==='oprog'){const o=orderById(id);return o?Math.min(100,o.good/o.qtd*100):0;}
   return 0;
@@ -1157,7 +1262,7 @@ function liveCls(k){
   const [a,id]=k.split(':');
   if(a==='oppm'){const o=orderById(id);if(!o||o.good<=0)return '';return o.esc/o.good*1e6>o.ppm?'bad':'good';}
   if(a==='odue'){const o=orderById(id);if(!o)return '';const r=o.due-S.t;return r<0?'bad':r<DAY/2?'warn':'';}
-  if(a==='pst'){const p=pressById(id);return p?'state '+({run:'good',setup:'gold',pm:'info',broken:'bad',noop:'bad',nomat:'warn',idle:'muted'}[p.st]||''):'';}
+  if(a==='pst'){const p=pressById(id);return p?'state '+({run:'good',setup:'gold',pm:'info',broken:'bad',noop:'bad',nomat:'warn',exped:'warn',idle:'muted'}[p.st]||''):'';}
   if(a==='cash')return 'cash num'+(S.cash<0?' neg':'');
   return null;
 }
@@ -1262,6 +1367,8 @@ function vEquipe(){
   if(E.I.cov<1)gaps.push(E.I.n?'faltam inspetores para cobrir todas as prensas':'ninguém está caçando peça ruim');
   if(E.T.cov<1)gaps.push(E.T.n?'faltam técnicos para todas as prensas':'ninguém faz manutenção');
   if(!S.staff.some(s=>s.role==='preparador'))gaps.push('sem preparador, o setup demora 3 h');
+  if(!temEmpilhadeira(S))gaps.push('sem empilhadeira, a prensa para 1 h a cada troca de bobina');
+  else if(S.staff.filter(s=>s.role==='empilhadeira').length<Math.ceil(S.press.length/3))gaps.push('com tantas prensas, uma empilhadeira só vira fila de bobina');
   return `<section class="panel"><div class="phead"><h2>Currículos</h2><span class="tiny">Chegam novos todo dia. Com mais estrelas, aparece gente mais experiente.</span></div>
     ${gaps.length?`<p class="warn">Dica do RH: ${gaps.join('; ')}.</p>`:'<p class="good">Time bem montado!</p>'}
     <div class="grid">${S.cands.map(c=>card(c,true)).join('')}</div></section>
@@ -1382,6 +1489,10 @@ const ACT={
     log(`${s.nome} fez o curso e subiu para o nível ${s.lv}.`,'good');showStaff(id);},
   fire:id=>{const s=staffById(id);confirmModal(`${esc(s.nome)} vai embora. A rescisão custa ${brl(rescisao(s))}.`,'fireYes',id,'Demitir');},
   fireYes:id=>{const s=staffById(id);if(!s)return closeModal();S.cash-=rescisao(s);S.staff=S.staff.filter(x=>x!==s);S.press.forEach(p=>{if(p.op===id)p.op=null;if(p.tec===id)p.tec=null;});S.prepBusy=S.prepBusy.filter(x=>x!==id);log(`${s.nome} foi desligado.`,'warn');closeModal();},
+  sell:id=>{const p=pressById(id);if(!p)return;
+    confirmModal(`Vender a Prensa ${p.n} (${PRESSES[p.tipo].t} t) por ${brl(valorVenda(p))}? Se ela estiver com um pedido, ele volta para a fila, e o operador fica livre para outra prensa.`,'sellYes',id,`Vender por ${brl(valorVenda(p))}`);},
+  sellYes:id=>{const p=pressById(id);if(!p)return closeModal();const n=p.n,t=PRESSES[p.tipo].t;const v=venderPrensa(S,id);closeModal();
+    if(v){snd('coin');toast(`Prensa ${n} vendida por ${brl(v)}.`,'good');log(`Prensa ${n} (${t} t) vendida por ${brl(v)}. As outras prensas foram renumeradas.`,'gold');}},
   pm:id=>{const p=pressById(id);if(!p||['setup','broken','pm'].includes(p.st))return;
     if(hasTec()){const E=effects(S);p.rem=Math.max(30,60-6*(E.tecLv-1));p.tec=freeTec(S);}else{if(S.cash<PM_EXT)return;S.cash-=PM_EXT;p.rem=240;}
     p.remTot=p.rem;p.st='pm';log(`Revisão começou na Prensa ${p.n}.`,'info');showPress(id);},
