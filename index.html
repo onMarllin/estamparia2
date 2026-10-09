@@ -651,10 +651,25 @@ function autoGerente(S,ev){
     const maxT=Math.max(0,...S.press.map(p=>PRESSES[p.tipo].t));
     const l5=S.hist.slice(-5),q=l5.reduce((a,h)=>a+h.qtd,0),e=l5.reduce((a,h)=>a+h.esc,0);
     const ppmAtual=q?e/q*1e6:0;
+    // a exigência de PPM do cliente é preferência, não trava: prensa parada é pior
+    const seguro=o=>o.ppm>=ppmAtual*1.2;
+    const nota=o=>(o.esp?2e12:0)+(seguro(o)?1e12:0)+o.qtd*o.preco;
+    const avisa=c=>ev('auto',{k:'pcp',txt:`PCP automático aceitou ${c.esp?'um pedido urgente':'um pedido'} da ${c.cli}.`});
+    // 1) toda prensa sem pedido recebe um que ela consegue fazer
+    for(const p of S.press){
+      if(p.ped)continue;
+      const t=PRESSES[p.tipo].t;
+      if(S.orders.some(o=>!o.press&&partById(o.part).t<=t)){autoAssign(S);continue;}
+      let c=S.board.filter(o=>partById(o.part).t<=t).sort((a,b)=>nota(b)-nota(a))[0];
+      // quadro sem pedido para esta prensa: o PCP liga para os clientes atrás de um
+      if(!c){c=makeOrder(S,pick([400,600,800].filter(x=>x<=t)));S.board.push(c);}
+      if(c){acceptOrder(S,c);avisa(c);}
+    }
+    // 2) fila de reserva, só com pedidos dentro do PPM
     let g=0;
     while(S.orders.length<S.press.length+(S.press.length>2?2:1)&&g++<6){
-      const c=S.board.filter(o=>partById(o.part).t<=maxT&&o.ppm>=ppmAtual*1.2).sort((a,b)=>(b.esp?1:0)-(a.esp?1:0)||b.qtd*b.preco-a.qtd*a.preco)[0];
-      if(!c)break;acceptOrder(S,c);ev('auto',{k:'pcp',txt:`PCP automático aceitou ${c.esp?'um pedido urgente':'um pedido'} da ${c.cli}.`});
+      const c=S.board.filter(o=>partById(o.part).t<=maxT&&seguro(o)).sort((a,b)=>nota(b)-nota(a))[0];
+      if(!c)break;acceptOrder(S,c);avisa(c);
     }
   }
   if(autoLigada(S,'rh')){
@@ -1249,16 +1264,20 @@ function ev(type,d){
 // ---------- metas ----------
 const OEE=d=>(d&&d.plan>0&&d.prod>0)?{A:d.run/d.plan,P:d.prod/d.ideal,Q:(d.prod-d.def)/d.prod,get v(){return this.A*this.P*this.Q;}}:null;
 const MISSIONS=[
+  // missões em sequência que sempre andam: nenhuma depende de azar (reclamação, quebra) nem de esperar o auditor
   {t:'Aceite seu primeiro pedido na aba Pedidos.',r:5000,ok:()=>S.orders.length>0||S.tot.ped>0},
+  {t:'Entregue seu primeiro pedido.',r:5000,ok:()=>S.tot.ped>=1},
+  {t:'Contrate um operador de empilhadeira (camisa azul) para trazer as bobinas.',r:8000,ok:()=>S.staff.some(s=>s.role==='empilhadeira')},
   {t:'Contrate um inspetor de qualidade (camisa verde clara).',r:8000,ok:()=>S.staff.some(s=>s.role==='inspetor')},
-  {t:'Contrate um técnico de manutenção (camisa cinza escura).',r:8000,ok:()=>hasTec()},
-  {t:'Entregue 3 pedidos sem reclamação.',r:15000,ok:()=>S.hist.filter(h=>h.ppm<=h.ppmMax).length>=3},
   {t:'Compre a segunda prensa. É só tocar no quadrado piscando.',r:20000,ok:()=>S.press.length>=2},
-  {t:'Resolva uma reclamação com um 8D.',r:15000,ok:()=>S.comps.some(c=>c.st==='fechada')},
+  {t:'Contrate um técnico de manutenção (camisa cinza escura).',r:8000,ok:()=>hasTec()},
+  {t:'Entregue 5 pedidos sem reclamação.',r:15000,ok:()=>S.hist.filter(h=>h.ppm<=h.ppmMax).length>=5},
+  {t:'Contrate um comprador (camisa branca) e veja a aba Compras.',r:15000,ok:()=>S.staff.some(s=>s.role==='comprador')},
   {t:'Feche um dia com OEE acima de 65%.',r:25000,ok:()=>S.days.some(d=>{const o=OEE(d);return o&&o.v>0.65;})},
-  {t:'Passe na visita do auditor.',r:30000,ok:()=>S.auds.some(a=>a.pts>=5)},
+  {t:'Melhore uma prensa para o nível 2 (toque na prensa).',r:25000,ok:()=>S.press.some(p=>(p.lv||1)>=2)},
+  {t:'Entregue um pedido urgente no prazo.',r:30000,ok:()=>(S.meta.urgOk||0)>=1},
   {t:'Compre uma prensa de 800 toneladas.',r:40000,ok:()=>S.press.some(p=>p.tipo==='p800')},
-  {t:'Entregue um pedido de 400 PPM sem reclamação.',r:60000,ok:()=>S.hist.some(h=>h.ppmMax===400&&h.ppm<=400)}
+  {t:'Leve a fábrica ao nível 5.',r:60000,ok:()=>nivelDe(S.tot.receita||0)>=5}
 ];
 const TROPHIES=[
   {id:'e1',n:'Primeira entrega',d:'Entregue o primeiro pedido.',r:2000,ok:()=>S.tot.ped>=1},
@@ -1299,6 +1318,8 @@ function checkNivel(){
   }
 }
 function checkMissions(){
+  // saves antigos: troca para a lista nova pulando, sem bônus, o que já foi feito
+  if(S.misV!==2){S.misV=2;if(S.mis<MISSIONS.length+50){let i=0;while(MISSIONS[i]&&MISSIONS[i].ok())i++;S.mis=i;}}
   let m=MISSIONS[S.mis];
   while(m&&m.ok()){S.cash+=m.r;log(`Objetivo cumprido! Bônus de ${brl(m.r)}.`,'gold');toast(`Objetivo cumprido! +${brl(m.r)}`,'gold');snd('coin');S.mis++;m=MISSIONS[S.mis];}
   S.tro=S.tro||[];
