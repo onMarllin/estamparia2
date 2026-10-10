@@ -160,6 +160,12 @@ select,input[type=text]{font:inherit;font-size:15px;color:var(--text);background
 @keyframes blink2{50%{opacity:.55}}
 .urgtxt{font-size:14px;color:var(--yel)}
 .mcard{border-left:6px solid var(--c)}
+canvas.matico{width:32px;height:32px;flex:none;background:#14181d;border:2px solid var(--edge)}
+canvas.matico.r2{box-shadow:0 0 0 2px #7d4fb8}canvas.matico.r3{box-shadow:0 0 0 2px #f2c230,0 0 10px #f2c23088}
+.matrev{display:flex;justify-content:center;padding:10px}
+.matrev canvas{width:128px;height:128px;background:radial-gradient(#2a2340,#14181d 70%);border:3px solid var(--edge);animation:matIn .6s ease-out}
+.matrev.r3 canvas{background:radial-gradient(#4a3a10,#14181d 70%);box-shadow:0 0 30px #f2c23066}
+@keyframes matIn{from{transform:scale(.3) rotate(-20deg);opacity:0}to{transform:none;opacity:1}}
 .streak{display:flex;gap:4px;flex-wrap:wrap}
 .streak i{font-style:normal;min-width:34px;height:30px;padding:0 4px;border:2px solid var(--edge);background:var(--panel2);display:flex;align-items:center;justify-content:center;font-family:var(--display);font-size:12px;color:var(--muted)}
 .streak i.gem{color:var(--purple)}
@@ -1122,6 +1128,7 @@ function sceneDraw(cv,now){
     if(p)list.push({y:y0+SC.ROWH-3,d:()=>{
       drawCoilStand(c,x0,y0,p,RM?0:now);
       drawPressSm(c,x0+15,y0+10,p,RM?0:now,spd);
+      drawMatrizNaPrensa(c,x0+15,y0+10,p,RM?0:now,spd);
       drawExtrasPrensa(c,x0,y0,p,RM?0:now);
       const o=orderById(p.ped);
       F(x0+15,y0+SC.ROWH+2,26,3,'#15191e');
@@ -1171,6 +1178,51 @@ function drawForklift(c,cx,fy,s,face,carry,t){
   if(carry==='coil')rolo(F,10,-7+lift,3.8,'#56606a','#b8c3cd');
   if(carry==='pallet'){F(6,-3+lift,7,1,'#8a5a2b');F(6,-8+lift,7,5,'#b98a4e');F(9,-8+lift,1,5,'#8a5a2b');F(6,-6+lift,7,1,'#8a5a2b');}
 }
+// ---------- matrizes: sprite por raridade e tipo ----------
+const MAT_COR=[
+  {b:'#aeb8c2',h:'#e6ecf1',s:'#6d7a87'},
+  {b:'#3f7fc4',h:'#8cc4f5',s:'#234d7a'},
+  {b:'#7d4fb8',h:'#c39cf0',s:'#45276e',t:'#f2c230'},
+  {b:'#d9a21e',h:'#fff0a0',s:'#8a6414',t:'#ffffff'}
+];
+const MAT_ICO={
+  veloz:['...#.','..#..','.###.','..#..','.#...'],
+  precisa:['..#..','.#.#.','#.#.#','.#.#.','..#..'],
+  agil:['.##.#','#..##','#....','#...#','.###.'],
+  robusta:['#####','#...#','#.#.#','.#.#.','..#..']
+};
+function iconeMatriz(F,x,y,tipo,col){const g=MAT_ICO[tipo]||MAT_ICO.veloz;g.forEach((l,j)=>[...l].forEach((ch,i)=>{if(ch==='#')F(x+i,y+j,1,1,col);}));}
+// ícone 16x16 da matriz (cartões, ficha da prensa)
+function drawMatrizIcon(c,m,now){
+  const F=(x,y,w,h,col)=>{c.fillStyle=col;c.fillRect(x,y,w,h);};
+  c.clearRect(0,0,16,16);const K=MAT_COR[m.rar]||MAT_COR[0];
+  if(m.rar>=2){const a=0.18+0.12*Math.sin(now/300);c.fillStyle=m.rar===3?`rgba(255,224,122,${a})`:`rgba(185,138,230,${a})`;c.fillRect(0,0,16,16);}
+  F(2,2,12,5,K.b);F(2,2,12,1,K.h);F(2,6,12,1,K.s);
+  F(3,7,1,3,'#9aa6b1');F(12,7,1,3,'#9aa6b1');F(6,7,4,2,K.s);
+  F(2,10,12,5,K.b);F(2,10,12,1,K.h);F(2,14,12,1,K.s);F(6,10,4,1,'#1b2026');
+  F(5,2,6,5,K.s);iconeMatriz(F,5,2,m.tipo,m.rar===3?'#fff6d0':'#f4f7fa');
+  if(m.rar===1)for(const [a,b] of [[3,11],[12,11],[3,13],[12,13]])F(a,b,1,1,'#e9edf0');
+  if(m.rar>=2){F(2,6,12,1,K.t);F(2,10,12,1,K.t);}
+  if(m.rar===3){F(7,12,2,2,'#ec5a50');F(7,12,1,1,'#ffb3ad');
+    const k=Math.floor(now/90)%28;for(let i=0;i<16;i++){const y=i,x=k-i;if(x>=2&&x<14&&((y>=2&&y<7)||(y>=10&&y<15)))F(x,y,1,1,'#ffffffaa');}}
+  if(m.rar>=2){const t=Math.floor(now/250)%8;const pts=[[14,1],[1,8],[14,15],[0,1]];const p=pts[t%4];if(t<4){F(p[0],p[1],1,1,'#ffffff');}}
+}
+// matriz montada dentro da prensa: metade de cima no martelo, metade de baixo na mesa
+function drawMatrizNaPrensa(c,x,y,p,t,spd){
+  const m=matrizDaPrensa(S,p);if(!m)return;
+  const F=(a,b,w,h,col)=>{c.fillStyle=col;c.fillRect(x+a,y+b,w,h);};const K=MAT_COR[m.rar]||MAT_COR[0];
+  let s=0;if(p.st==='run'){const g=PRESSES[p.tipo].gpm*spd;const ph=(t/1000)*(Math.min(g,110)/60)*Math.PI*2;s=Math.round(6*(0.5-0.5*Math.cos(ph)));}else if(p.st==='setup')s=1;
+  if(m.rar>=2){const a=0.25+0.2*Math.sin(t/260);c.fillStyle=m.rar===3?`rgba(255,224,122,${a})`:`rgba(185,138,230,${a})`;c.fillRect(x+7,y+14+s,12,3);c.fillRect(x+7,y+20,12,4);}
+  F(8,15+s,10,2,K.b);F(8,15+s,10,1,K.h);
+  F(8,21,10,3,K.b);F(8,21,10,1,K.h);F(8,23,10,1,K.s);
+  if(m.rar>=2){F(8,16+s,10,1,K.t);F(8,21,10,1,K.t);}
+  if(m.rar===1){F(8,22,1,1,'#e9edf0');F(17,22,1,1,'#e9edf0');}
+  if(m.rar===3){F(12,22,2,1,'#ec5a50');}
+  // pedra na plaqueta da prensa com a cor da raridade
+  F(11,4,4,1,RARIDADES[m.rar].c);
+  if(m.rar>=2&&Math.floor(t/300)%5===0){const k=Math.floor(t/300)%4;F([6,19,7,18][k],[13,19,25,12][k],1,1,'#ffffff');}
+}
+
 // ---------- melhorias do catálogo que aparecem no chão de fábrica ----------
 let _ultCena=0;const dtCena=now=>{const d=_ultCena?Math.min(0.2,(now-_ultCena)/1000):0;_ultCena=now;return d;};
 // câmera de inspeção e lubrificação central em cada prensa
@@ -1319,6 +1371,7 @@ const first=n=>String(n).split(' ')[0];
 const RM=matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 const KEY='golpe-de-prensa-v3', KEY_OLD='golpe-de-prensa-v2';
+let ULT_MAT=null;
 let S=null, tab='fabrica', modal=null, modalRef=null, sig='', lastSave=0, audit=null;
 function save(){if(!S)return;S.savedAt=Date.now();try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
 function normalizar(s){s.meta=s.meta||novaMeta();s.meta.mats=s.meta.mats||[];s.meta.auto=s.meta.auto||{};s.press.forEach(p=>{p.lv=p.lv||1;});
@@ -1414,7 +1467,13 @@ function ev(type,d){
       if(!d.fork)log(`Pedido pronto na ${pn(d.p)}. Sem empilhadeira, o operador está levando a pé até a expedição.`,'warn');break;}
     case 'matriz':{const m=d.m,R=RARIDADES[m.rar];
       const msg=d.vendida?`Achou a ${nomeMatriz(m)} (${R.n.toLowerCase()}), mas o depósito de matrizes está cheio: vendida por ${brl(d.vendida)}.`:`Matriz ${R.n.toLowerCase()} encontrada: ${nomeMatriz(m)}! ${efeitoMatriz(m)}.`;
-      log(msg,'gold');toast(msg,'gold');snd(m.rar>=2?'trophy':'coin');setTimeout(()=>floatAt(DOCKX-20,SC.DOCK-6,nomeMatriz(m),'big'),RM?0:1300);break;}
+      log(msg,'gold');snd(m.rar>=2?'trophy':'coin');setTimeout(()=>floatAt(DOCKX-20,SC.DOCK-6,nomeMatriz(m),'big'),RM?0:1300);
+      // épica e lendária ganham uma tela de revelação; as outras, só o aviso
+      if(m.rar>=2&&!d.vendida){FILA.push(()=>{ULT_MAT=m;openModal(`<div class="brand" style="color:${R.c}">Matriz ${R.n.toLowerCase()}!</div>
+        <div class="matrev r${m.rar}"><canvas class="px" data-mat="_drop" width="16" height="16"></canvas></div>
+        <h2 style="color:${R.c};text-align:center">${nomeMatriz(m)}</h2><p class="muted" style="text-align:center;margin-inline:auto">${efeitoMatriz(m)}. Equipe numa prensa pela ficha dela (toque na prensa).</p>
+        <button class="btn wide" data-act="close">Guardar no depósito</button>`,'help');});}
+      else toast(msg,'gold');break;}
     case 'auto':log(d.txt,'info');break;
     case 'oferta':{log('O comprador achou uma oferta relâmpago. Veja na aba Compras.','gold');toast('Oferta relâmpago! Veja na aba Compras.','gold');snd('coin');break;}
     case 'dia':{
@@ -1574,10 +1633,11 @@ function drawPortraits(now){
     const t=RM?0:now+(s.id.charCodeAt(0)*97);
     drawGuy(x,1,2+(Math.floor(t/650)%2),s,{blink:Math.floor(t/100)%40===0});
   });
+  document.querySelectorAll('canvas[data-mat]').forEach(c=>{const m=matrizesDe(S).find(x=>x.id===c.dataset.mat)||(c.dataset.mat==='_drop'&&ULT_MAT);if(m)drawMatrizIcon(c.getContext('2d'),m,RM?0:now);});
   document.querySelectorAll('canvas[data-pressimg]').forEach(c=>{
     const x=c.getContext('2d');x.clearRect(0,0,c.width,c.height);
     const p=c.dataset.pressimg.startsWith('p')&&PRESSES[c.dataset.pressimg]?{tipo:c.dataset.pressimg,st:'run'}:pressById(c.dataset.pressimg);
-    if(p)drawPressSm(x,2,9,p,RM?0:now,1);
+    if(p){drawPressSm(x,2,9,p,RM?0:now,1);if(p.id)drawMatrizNaPrensa(x,2,9,p,RM?0:now,1);}
   });
 }
 
@@ -1703,7 +1763,7 @@ function blocoNivelMatriz(p){
     <div class="tiny">Cada nível dá +6% de cadência e 5% menos desgaste.</div>
     <label class="tiny" for="mat-${p.id}">Matriz equipada</label>
     <select id="mat-${p.id}" data-act="setmat" data-arg="${p.id}"><option value="">Nenhuma</option>${livres.map(x=>`<option value="${x.id}" ${x.id===p.mat?'selected':''}>${nomeMatriz(x)} (${RARIDADES[x.rar].n}): ${efeitoMatriz(x)}</option>`).join('')}</select>
-    ${m?`<div class="tiny" style="color:${RARIDADES[m.rar].c}">${efeitoMatriz(m)}</div>`:matrizesDe(S).length?'':'<div class="tiny">Matrizes caem de pedidos entregues no prazo. Pedidos urgentes sempre dão uma rara ou melhor.</div>'}</div>`;
+    ${m?`<div class="row"><canvas class="px matico r${m.rar}" data-mat="${m.id}" width="16" height="16"></canvas><div class="tiny" style="color:${RARIDADES[m.rar].c}"><b>${nomeMatriz(m)}</b> (${RARIDADES[m.rar].n})<br>${efeitoMatriz(m)}</div></div>`:'<div class="tiny warn">Sem matriz especial: a prensa usa a ferramenta padrão, cinza.</div>'+(matrizesDe(S).length?'':'<div class="tiny">Matrizes caem de pedidos entregues no prazo. Pedidos urgentes sempre dão uma rara ou melhor.</div>')}</div>`;
 }
 function showStaff(id){
   const s=staffById(id);if(!s||!S.staff.includes(s))return closeModal();
@@ -2013,7 +2073,7 @@ function vProgresso(){
       ${tem?`<button class="btn sm ghost" data-act="toggleAuto" data-arg="${k}">${on?'Desligar':'Ligar'}</button>`:`<button class="btn sm" data-act="buyAuto" data-arg="${k}" data-cost="${a.preco}">Comprar por ${brl(a.preco)}</button>`}</div>`;}).join('');
   const ms=matrizesDe(S).slice().sort((a,b)=>b.rar-a.rar);
   const mcards=ms.map(x=>{const R=RARIDADES[x.rar],em=S.press.find(q=>q.mat===x.id);
-    return `<div class="card mcard" style="--c:${R.c}"><div class="row between wrap"><b style="color:${R.c}">${nomeMatriz(x)}</b><span class="pill" style="color:${R.c}">${R.n}</span></div>
+    return `<div class="card mcard" style="--c:${R.c}"><div class="row between wrap"><span class="row"><canvas class="px matico r${x.rar}" data-mat="${x.id}" width="16" height="16"></canvas><b style="color:${R.c}">${nomeMatriz(x)}</b></span><span class="pill" style="color:${R.c}">${R.n}</span></div>
       <div class="tiny">${efeitoMatriz(x)}.</div><div class="tiny">${em?`Equipada na Prensa ${em.n}`:'Guardada. Equipe pela ficha de uma prensa.'}</div>
       ${em?'':`<button class="btn sm ghost" data-act="sellMat" data-arg="${x.id}">Vender por ${brl(R.venda)}</button>`}</div>`;}).join('');
   return salto+vant+`<section class="panel"><div class="phead"><h2>Escritório</h2><span class="tiny">Comprado com dinheiro, vale para sempre, em todos os países.</span></div>
