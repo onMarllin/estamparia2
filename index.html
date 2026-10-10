@@ -574,7 +574,8 @@ function stepPress(S,p,dt,E,ev){
     const det=1-(1-Math.min(0.9,opDet(ol)+(cap?0.05:0)))*(1-E.insp)*(melh(S,'camera')?0.7:1);
     const scrap=gen*det, esc=gen-scrap;
     o.good+=prod-scrap;o.esc+=esc;o.scrap+=scrap;
-    S.cash-=prod*part.mat*fatorAco(S);
+    // o aço consumido fica anotado no pedido e é descontado só na entrega (o caixa não fica "escorrendo")
+    o.aco=(o.aco||0)+prod*part.mat*fatorAco(S);
     p.cond=Math.max(0,p.cond-dt/40*(1-0.05*((p.lv||1)-1))*(1-bonusMatriz(S,p,'robusta'))*(melh(S,'lubri')?0.85:1)*(1-0.08*bon(S,'lubrif')));
     d.plan+=dt;d.run+=dt;d.prod+=prod;d.ideal+=nominal*dt;d.def+=gen;d.scrap+=scrap;d.esc+=esc;
     S.tot.prod+=prod;
@@ -604,7 +605,8 @@ function deliver(S,o,ev){
   const late=S.t>o.due;
   const ppm=o.esc/o.qtd*1e6;
   const receita=o.qtd*o.preco*(late?(o.esp?0.36:0.9):1);
-  S.cash+=receita;S.tot.receita=(S.tot.receita||0)+receita;
+  const aco=o.aco||0;
+  S.cash+=receita-aco;S.tot.receita=(S.tot.receita||0)+receita;
   const comp=ppm>o.ppm;
   let custoRec=0;
   if(comp){custoRec=Math.round(3000+o.esc*o.preco*2);S.cash-=custoRec;S.rep=clamp(S.rep-6,0,100);
@@ -614,7 +616,7 @@ function deliver(S,o,ev){
   if(S.hist.length>40) S.hist.shift();
   S.tot.ped++; if(!late)S.tot.noPrazo++;
   if(o.esp&&!late&&S.meta)S.meta.urgOk=(S.meta.urgOk||0)+1;
-  ev('entrega',{o,comp,late,ppm,receita,custoRec});
+  ev('entrega',{o,comp,late,ppm,receita,custoRec,aco});
   if(!late&&!comp&&(o.esp||Math.random()<0.15))ganharMatriz(S,o.esp?1:0,ev,o.esp?'urgente':'entrega');
 }
 function stepForks(S,dt,ev){
@@ -1444,9 +1446,9 @@ function ev(type,d){
   switch(type){
     case 'entrega':{const o=d.o;
       Scene.trucks.push({t:0});
-      setTimeout(()=>{coinBurst(DOCKX,SC.DOCK+6,d.comp?6:16);floatAt(DOCKX,SC.DOCK+4,'+'+brl(d.receita),'big');},RM?0:900);
+      setTimeout(()=>{coinBurst(DOCKX,SC.DOCK+6,d.comp?6:16);floatAt(DOCKX,SC.DOCK+4,'+'+brl(d.receita-(d.aco||0)),'big');},RM?0:900);
       snd('coin');
-      log(`Entrega feita para a ${o.cli}: ${brl(d.receita)}${d.late?' (atrasou, 10% de desconto)':''}.`,d.late?'warn':'gold');
+      log(`Entrega feita para a ${o.cli}: recebeu ${brl(d.receita)}, pagou ${brl(d.aco||0)} de aço, sobrou ${brl(d.receita-(d.aco||0))}${d.late?' (atrasou, com desconto)':''}.`,d.late?'warn':'gold');
       if(d.comp){setTimeout(()=>{floatAt(DOCKX-30,SC.DOCK-2,'Reclamação!','bad');snd('bad');},RM?0:1500);
         const m=`A ${o.cli} achou peça ruim demais (${num(d.ppm)} PPM, limite ${num(o.ppm)}). Multa de ${brl(d.custoRec)}. Resolva com um 8D no Painel.`;log(m,'bad');toast(m,'bad');}
       break;}
@@ -1818,6 +1820,7 @@ function live(k){
     case 'pcond':{const p=pressById(id);return p?`${Math.round(p.cond)}%`:'';}
     case 'pcoil':{const p=pressById(id);return p?`dá para mais ${num(Math.max(0,p.coil??coilSize(p,S)))} peças${p.coilSpare?', a próxima já está do lado':p.coilReq&&p.st!=='nomat'?', empilhadeira trazendo a próxima':''}`:'';}
     case 'oprog':{const o=orderById(id);return o?`${num(Math.min(o.good,o.qtd))} de ${num(o.qtd)} peças`:'';}
+    case 'oaco':{const o=orderById(id);if(!o)return '';const p=o.qtd*o.preco;return `Aço usado até agora: ${brl(o.aco||0)}. Na entrega você recebe ${brl(p)} e o aço é descontado.`;}
     case 'oppm':{const o=orderById(id);if(!o)return '';return o.good>0?`Peças ruins até agora: ${num(o.esc/Math.max(1,o.good)*1e6)} PPM (cliente aceita ${num(o.ppm)})`:`Cliente aceita até ${num(o.ppm)} PPM`;}
     case 'odue':{const o=orderById(id);if(!o)return '';const r=o.due-S.t;return r>=0?`Entrega em ${dur(r)}`:`Atrasado ${dur(-r)}`;}
     case '8d':{const c=S.comps.find(x=>x.id===id);if(!c||c.st!=='8d')return '';return `Resolve em ${dur(c.fim-S.t)}`;}
@@ -1941,7 +1944,7 @@ function vPedidos(){
   const maxT=Math.max(0,...S.press.map(p=>PRESSES[p.tipo].t));
   const act=S.orders.map(o=>{const pr=o.press?pressById(o.press):null;const part=partById(o.part);
     return `<div class="card"><div class="row"><canvas class="px" data-part="${o.part}" width="16" height="16" style="width:32px;height:32px"></canvas><div class="grow"><b>${part.nome}</b><div class="tiny">${esc(o.cli)}. ${pr?`Na Prensa ${pr.n}`:`Na fila, esperando uma prensa de ${part.t} t`}</div></div></div>
-      <div class="bar y"><i data-w="oprog:${o.id}"></i></div><div class="barlab">${L('oprog:'+o.id)}${L('odue:'+o.id)}</div><div class="tiny">${L('oppm:'+o.id)}</div></div>`;}).join('');
+      <div class="bar y"><i data-w="oprog:${o.id}"></i></div><div class="barlab">${L('oprog:'+o.id)}${L('odue:'+o.id)}</div><div class="tiny">${L('oppm:'+o.id)}</div><div class="tiny">${L('oaco:'+o.id)}</div></div>`;}).join('');
   const board=S.board.map(o=>{const part=partById(o.part);const can=part.t<=maxT;const est=can?ppmEstimado(S,o.part):null;const lucro=o.qtd*(o.preco-part.mat*fatorAco(S));
     return `<div class="card ${o.esp?'urg':''}"><div class="row"><canvas class="px" data-part="${o.part}" width="16" height="16" style="width:40px;height:40px"></canvas><div class="grow"><b>${part.nome}</b><div class="tiny">${esc(o.cli)}</div></div>${o.esp?'<span class="pill urgp">Urgente</span>':est==null?'':`<span class="pill ${est<=o.ppm*0.8?'good':est<=o.ppm?'warn':'bad'}">${est<=o.ppm*0.8?'Dá conta':est<=o.ppm?'No limite':'Arriscado'}</span>`}</div>
       ${o.esp?'<div class="urgtxt">Paga 2,5 vezes mais e garante uma matriz rara ou melhor se chegar no prazo. Atrasou, perde o bônus.</div>':''}
