@@ -334,12 +334,12 @@ const PRESSES={
 };
 const MAX_PRESSES=8;
 const PARTS=[
-  {id:'sup',nome:'Suporte do escapamento',t:400,preco:2.8,mat:1.9,def:0.006},
-  {id:'dob',nome:'Reforço da dobradiça',t:400,preco:3.35,mat:2.3,def:0.007},
-  {id:'trv',nome:'Travessa do painel',t:600,preco:5.6,mat:3.65,def:0.007},
-  {id:'col',nome:'Reforço da coluna B',t:600,preco:6.35,mat:4.3,def:0.008},
-  {id:'lon',nome:'Longarina dianteira',t:800,preco:10.5,mat:6.3,def:0.008},
-  {id:'ass',nome:'Assoalho traseiro',t:800,preco:12.0,mat:7.6,def:0.009}
+  {id:'sup',nome:'Suporte do escapamento',t:400,preco:2.8,mat:1.9,def:0.003},
+  {id:'dob',nome:'Reforço da dobradiça',t:400,preco:3.35,mat:2.3,def:0.0035},
+  {id:'trv',nome:'Travessa do painel',t:600,preco:5.6,mat:3.65,def:0.0035},
+  {id:'col',nome:'Reforço da coluna B',t:600,preco:6.35,mat:4.3,def:0.004},
+  {id:'lon',nome:'Longarina dianteira',t:800,preco:10.5,mat:6.3,def:0.004},
+  {id:'ass',nome:'Assoalho traseiro',t:800,preco:12.0,mat:7.6,def:0.0045}
 ];
 const CLIENTES=['Aurora Automotiva','Veloce Motors','Tauru Caminhões','Nimbus Agrícola','Orion Utilitários'];
 const ROLES={
@@ -478,9 +478,19 @@ function effects(S){
   const metro=M.n?0.06+0.015*M.lv:0;
   return {
     lead:L.cov*(0.03+0.012*L.lv), leadXp:L.cov*0.6,
-    insp:I.n?I.cov*Math.min(0.94,0.5+0.06*I.lv+metro):0,
+    insp:I.n?I.cov*Math.min(0.97,0.75+0.04*I.lv+metro):0,
     tecCov:T.cov, tecLv:T.lv, L,I,T,M
   };
+}
+// PPM que a fábrica entregaria hoje nesta peça (média das prensas que conseguem fazê-la)
+function ppmEstimado(S,partId){
+  const E=effects(S),part=partById(partId);
+  const ps=S.press.filter(p=>PRESSES[p.tipo].t>=part.t);if(!ps.length)return null;
+  const v=ps.map(p=>{const op=p.op?S.staff.find(s=>s.id===p.op):null;const ol=op?effLv(op):1,cap=op&&op.trait==='caprichoso';
+    const gen=S.def[partId]*opDefMult(ol)*condDefMult(Math.min(p.cond,85))*(cap?0.8:1)*(1-bonusMatriz(S,p,'precisa'));
+    const det=1-(1-Math.min(0.9,opDet(ol)+(cap?0.05:0)))*(1-E.insp)*(melh(S,'camera')?0.7:1);
+    return gen*(1-det)*1e6;});
+  return v.reduce((a,b)=>a+b,0)/v.length;
 }
 const opPerf=lv=>Math.min(0.95,0.66+0.045*(lv-1));
 const opDet=lv=>0.4+0.05*(lv-1);
@@ -596,6 +606,7 @@ function deliver(S,o,ev){
   S.hist.push({cli:o.cli,part:o.part,qtd:o.qtd,esc:o.esc,scrap:o.scrap,late,ppm,ppmMax:o.ppm,receita,custoRec,dia:dayOf(S.t)});
   if(S.hist.length>40) S.hist.shift();
   S.tot.ped++; if(!late)S.tot.noPrazo++;
+  if(o.esp&&!late&&S.meta)S.meta.urgOk=(S.meta.urgOk||0)+1;
   ev('entrega',{o,comp,late,ppm,receita,custoRec});
   if(!late&&!comp&&(o.esp||Math.random()<0.15))ganharMatriz(S,o.esp?1:0,ev,o.esp?'urgente':'entrega');
 }
@@ -833,7 +844,7 @@ function novaMeta(){return {uni:1,pat:0,patTot:0,ups:{},vida:0,melhorNivel:1,sal
 function newState(nome,meta){
   meta=meta||novaMeta();
   const cash0=120000+50000*(meta.ups.capital||0)+60000*((meta.bon&&meta.bon.invest)||0);
-  const S={v:3,meta,cashDay:cash0,nome:nome||'Estamparia Aço Norte',t:6*60,cash:cash0,rep:Math.min(100,10+10*(meta.ups.fama||0)+8*((meta.bon&&meta.bon.marca)||0)),press:[],staff:[],orders:[],board:[],cands:[],prepBusy:[],hist:[],days:[],comps:[],
+  const S={v:3,qualV:2,meta,cashDay:cash0,nome:nome||'Estamparia Aço Norte',t:6*60,cash:cash0,rep:Math.min(100,10+10*(meta.ups.fama||0)+8*((meta.bon&&meta.bon.marca)||0)),press:[],staff:[],orders:[],board:[],cands:[],prepBusy:[],hist:[],days:[],comps:[],
     tot:{prod:0,brk:0,ped:0,noPrazo:0,receita:0},ftasks:[],fbusy:{},melh:{},oferta:null,acoPromo:null,def:{},speed:1,mis:meta.uni>1?999:0,nextAud:7,auds:[],log:[],over:false};
   PARTS.forEach(p=>S.def[p.id]=p.def*(1-0.08*tec(S,'aco'))*(1-0.08*bon(S,'precisao'))*(1+0.1*(meta.uni-1)));
   for(const tipo of ['p400','p400','p600','p800'].slice(0,1+tec(S,'galpao'))){
@@ -1228,7 +1239,10 @@ const RM=matchMedia('(prefers-reduced-motion: reduce)').matches;
 const KEY='golpe-de-prensa-v3', KEY_OLD='golpe-de-prensa-v2';
 let S=null, tab='fabrica', modal=null, modalRef=null, sig='', lastSave=0, audit=null;
 function save(){if(!S)return;S.savedAt=Date.now();try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
-function normalizar(s){s.meta=s.meta||novaMeta();s.meta.mats=s.meta.mats||[];s.meta.auto=s.meta.auto||{};s.press.forEach(p=>{p.lv=p.lv||1;});return s;}
+function normalizar(s){s.meta=s.meta||novaMeta();s.meta.mats=s.meta.mats||[];s.meta.auto=s.meta.auto||{};s.press.forEach(p=>{p.lv=p.lv||1;});
+  // qualidade rebalanceada: saves antigos guardavam a taxa de defeito antiga (o dobro)
+  if(!s.qualV){for(const k in s.def)s.def[k]*=0.5;s.qualV=2;}
+  return s;}
 function loadSave(){try{
   let r=localStorage.getItem(KEY);if(r){const s=JSON.parse(r);if(s&&s.v===3&&s.press)return s;}
   r=localStorage.getItem(KEY_OLD);if(r){const s=JSON.parse(r);if(s&&s.v===2&&s.press){s.v=3;s.meta=novaMeta();s.tot.receita=(s.hist||[]).reduce((a,h)=>a+(h.receita||0),0);return s;}}
@@ -1293,7 +1307,7 @@ function ev(type,d){
   const pn=p=>`Prensa ${p.n}`;
   const now=performance.now();
   switch(type){
-    case 'entrega':{const o=d.o;if(o.esp&&!d.late)S.meta.urgOk=(S.meta.urgOk||0)+1;
+    case 'entrega':{const o=d.o;
       Scene.trucks.push({t:0});
       setTimeout(()=>{coinBurst(DOCKX,SC.DOCK+6,d.comp?6:16);floatAt(DOCKX,SC.DOCK+4,'+'+brl(d.receita),'big');},RM?0:900);
       snd('coin');
@@ -1582,7 +1596,7 @@ function opSelect(p,idp){
 function showPress(id){
   const p=pressById(id);if(!p)return closeModal();
   const P=PRESSES[p.tipo], o=orderById(p.ped);
-  const busy=['setup','broken','pm'].includes(p.st);
+  const busy=['setup','broken','pm','nomat','exped'].includes(p.st);
   const pmBtn=hasTec()?`<button class="btn ghost" data-act="pm" data-arg="${p.id}" ${busy?'disabled data-lock':''}>Revisar agora (grátis)</button>`
     :`<button class="btn ghost" data-act="pm" data-arg="${p.id}" data-cost="${PM_EXT}" ${busy?'disabled data-lock':''}>Revisão terceirizada ${brl(PM_EXT)}</button>`;
   openModal(`<div class="mhead"><canvas class="px" data-pressimg="${p.id}" width="30" height="46" style="width:60px;height:92px"></canvas>
@@ -1778,11 +1792,11 @@ function vPedidos(){
   const act=S.orders.map(o=>{const pr=o.press?pressById(o.press):null;const part=partById(o.part);
     return `<div class="card"><div class="row"><canvas class="px" data-part="${o.part}" width="16" height="16" style="width:32px;height:32px"></canvas><div class="grow"><b>${part.nome}</b><div class="tiny">${esc(o.cli)}. ${pr?`Na Prensa ${pr.n}`:`Na fila, esperando uma prensa de ${part.t} t`}</div></div></div>
       <div class="bar y"><i data-w="oprog:${o.id}"></i></div><div class="barlab">${L('oprog:'+o.id)}${L('odue:'+o.id)}</div><div class="tiny">${L('oppm:'+o.id)}</div></div>`;}).join('');
-  const board=S.board.map(o=>{const part=partById(o.part);const can=part.t<=maxT;const lucro=o.qtd*(o.preco-part.mat*fatorAco(S));
-    return `<div class="card ${o.esp?'urg':''}"><div class="row"><canvas class="px" data-part="${o.part}" width="16" height="16" style="width:40px;height:40px"></canvas><div class="grow"><b>${part.nome}</b><div class="tiny">${esc(o.cli)}</div></div>${o.esp?'<span class="pill urgp">Urgente</span>':`<span class="pill ${o.ppm<=800?'warn':'muted'}">${o.ppm<=800?'Exigente':'Tranquilo'}</span>`}</div>
+  const board=S.board.map(o=>{const part=partById(o.part);const can=part.t<=maxT;const est=can?ppmEstimado(S,o.part):null;const lucro=o.qtd*(o.preco-part.mat*fatorAco(S));
+    return `<div class="card ${o.esp?'urg':''}"><div class="row"><canvas class="px" data-part="${o.part}" width="16" height="16" style="width:40px;height:40px"></canvas><div class="grow"><b>${part.nome}</b><div class="tiny">${esc(o.cli)}</div></div>${o.esp?'<span class="pill urgp">Urgente</span>':est==null?'':`<span class="pill ${est<=o.ppm*0.8?'good':est<=o.ppm?'warn':'bad'}">${est<=o.ppm*0.8?'Dá conta':est<=o.ppm?'No limite':'Arriscado'}</span>`}</div>
       ${o.esp?'<div class="urgtxt">Paga 2,5 vezes mais e garante uma matriz rara ou melhor se chegar no prazo. Atrasou, perde o bônus.</div>':''}
       <dl class="facts"><div><dt>Peças</dt><dd>${num(o.qtd)}</dd></div><div><dt>Prazo</dt><dd class="${o.esp?'bad':''}">${o.esp?dur(o.prazoMin):`${o.dias} ${o.dias>1?'dias':'dia'}`}</dd></div><div><dt>Paga</dt><dd class="gold">${brl(o.qtd*o.preco)}</dd></div><div><dt>Sobra depois do aço</dt><dd class="good">${brl(lucro)}</dd></div></dl>
-      <div class="tiny">Aceita até ${num(o.ppm)} PPM de peça ruim. Oferta some em ${dur(o.exp-S.t)}.</div>
+      <div class="tiny">Aceita até ${num(o.ppm)} PPM de peça ruim${est!=null?`. Hoje sua fábrica entrega uns <b class="${est<=o.ppm?'good':'bad'}">${num(Math.round(est/10)*10)} PPM</b> nessa peça`:''}. Oferta some em ${dur(o.exp-S.t)}.</div>
       <button class="btn wide" data-act="accept" data-arg="${o.id}" ${can?'':'disabled data-lock'}>${can?'Aceitar':`Precisa de prensa de ${part.t} t`}</button></div>`;}).join('');
   return `${act?`<section class="panel"><div class="phead"><h2>Em produção</h2><span class="tiny">${S.orders.length} pedido(s)</span></div><div class="grid">${act}</div></section>`:''}
   <section class="panel"><div class="phead"><h2>Pedidos na mesa</h2><span class="tiny">${autoLigada(S,'pcp')?'<span class="good">PCP automático ligado: aceitando pedidos sozinho.</span>':'Chegam pedidos novos todo dia'}</span></div>
@@ -2051,8 +2065,9 @@ const ACT={
   sell:id=>{const p=pressById(id);if(!p)return;
     confirmModal(`Vender a Prensa ${p.n} (${PRESSES[p.tipo].t} t) por ${brl(valorVenda(p))}? Se ela estiver com um pedido, ele volta para a fila, e o operador fica livre para outra prensa.`,'sellYes',id,`Vender por ${brl(valorVenda(p))}`);},
   sellYes:id=>{const p=pressById(id);if(!p)return closeModal();const n=p.n,t=PRESSES[p.tipo].t;const v=venderPrensa(S,id);closeModal();
-    if(v){snd('coin');toast(`Prensa ${n} vendida por ${brl(v)}.`,'good');log(`Prensa ${n} (${t} t) vendida por ${brl(v)}. As outras prensas foram renumeradas.`,'gold');}},
-  pm:id=>{const p=pressById(id);if(!p||['setup','broken','pm'].includes(p.st))return;
+    if(v){snd('coin');toast(`Prensa ${n} vendida por ${brl(v)}.`,'good');log(`Prensa ${n} (${t} t) vendida por ${brl(v)}. As outras prensas foram renumeradas.`,'gold');}
+    else toast('Agora não dá: o operador está levando um pedido dessa prensa até a expedição. Tente daqui a pouco.','warn');},
+  pm:id=>{const p=pressById(id);if(!p||['setup','broken','pm','nomat','exped'].includes(p.st))return;
     if(hasTec()){const E=effects(S);p.rem=Math.max(30,60-6*(E.tecLv-1));p.tec=freeTec(S);}else{if(S.cash<PM_EXT)return;S.cash-=PM_EXT;p.rem=240;}
     p.remTot=p.rem;p.st='pm';log(`Revisão começou na Prensa ${p.n}.`,'info');showPress(id);},
   open8d:id=>{const c=S.comps.find(x=>x.id===id);if(!c||c.st!=='aberta'||S.cash<COST_8D)return;S.cash-=COST_8D;c.st='8d';c.ini=S.t;c.fim=S.t+(S.staff.some(s=>s.role==='inspetor')?1:2)*DAY;snd('click');log(`Equipe montada para o 8D da ${c.cli}.`,'info');},
