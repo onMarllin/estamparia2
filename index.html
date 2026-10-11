@@ -1,4 +1,5 @@
-<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"></head><body style="margin:0"><title>Golpe de Prensa</title>
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Golpe de Prensa</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;500;600;700&family=Silkscreen:wght@400;700&display=swap" rel="stylesheet">
@@ -160,6 +161,31 @@ select,input[type=text]{font:inherit;font-size:15px;color:var(--text);background
 @keyframes blink2{50%{opacity:.55}}
 .urgtxt{font-size:14px;color:var(--yel)}
 .mcard{border-left:6px solid var(--c)}
+/* sub-abas do Progresso */
+.subtabs{display:flex;flex-wrap:wrap;gap:6px;margin-top:14px}
+.subtabs button{font:inherit;font-size:14px;font-weight:600;color:var(--text);background:var(--panel2);border:2px solid var(--edge);padding:5px 10px;cursor:pointer}
+.subtabs button[aria-current="page"]{background:var(--purple);color:#1a1030}
+/* grade de matrizes */
+.mgrupo{display:flex;flex-direction:column;gap:6px}
+.mgh{font-weight:700;font-size:15px}
+.mgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(52px,1fr));gap:6px}
+.mtile{position:relative;background:#14181d;border:2px solid var(--edge);padding:4px;cursor:pointer;line-height:0;display:flex;align-items:center;justify-content:center;min-height:52px}
+.mtile canvas{width:40px;height:40px;image-rendering:pixelated}
+.mtile.r1{box-shadow:inset 0 0 0 2px #24507f}.mtile.r2{box-shadow:inset 0 0 0 2px #7d4fb8}.mtile.r3{box-shadow:inset 0 0 0 2px #f2c230,0 0 8px #f2c23055}
+.mtile.sel{outline:3px solid var(--yel);outline-offset:1px}
+.mtile .eq,.mtile .pl,.mtile .ck{position:absolute;font-size:11px;line-height:1;padding:2px 3px;font-family:var(--display)}
+.mtile .eq{left:1px;bottom:1px;background:var(--green);color:#0d1a10}
+.mtile .pl{right:1px;top:1px;background:var(--yel);color:var(--btnText)}
+.mtile .ck{left:1px;top:1px;background:var(--yel);color:var(--btnText)}
+.mtile.vazio{color:var(--muted);font-size:20px;border-style:dashed;cursor:default;width:56px}
+.fslots{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.fslots .mtile{width:56px}
+.fslots .mais{font-size:20px;color:var(--muted)}
+.fslots .alvo{color:var(--yel)}
+.forjaanim{position:relative;height:150px;display:flex;justify-content:center;align-items:center}
+.forjaanim canvas{position:absolute;width:64px;height:64px;image-rendering:pixelated;animation:fundir 1.5s ease-in forwards}
+.forjaanim .f0{--dx:-110px}.forjaanim .f1{--dx:0px;--dy:-50px}.forjaanim .f2{--dx:110px}
+@keyframes fundir{0%{transform:translate(var(--dx,0),var(--dy,0)) scale(1);opacity:1;filter:none}70%{transform:translate(0,0) scale(.8);opacity:1;filter:brightness(2)}100%{transform:translate(0,0) scale(.2);opacity:0;filter:brightness(4)}}
 canvas.matico{width:32px;height:32px;flex:none;background:#14181d;border:2px solid var(--edge)}
 canvas.matico.r2{box-shadow:0 0 0 2px #7d4fb8}canvas.matico.r3{box-shadow:0 0 0 2px #f2c230,0 0 10px #f2c23088}
 .matrev{display:flex;justify-content:center;padding:10px}
@@ -181,7 +207,6 @@ canvas.matico.r2{box-shadow:0 0 0 2px #7d4fb8}canvas.matico.r3{box-shadow:0 0 0 
 .scene .ov{position:absolute;inset:0;pointer-events:none;overflow:hidden}
 .scene .lab{position:absolute;font-family:var(--display);font-size:10px;color:#e9edf0;text-shadow:1px 1px 0 #0a0d10;transform:translate(0,-2px);white-space:nowrap}
 .scene .lab.empty{color:var(--yel)}
-.scene .lab.yard{color:#f2c230;font-size:9px;opacity:.9}
 .scene .fl{position:absolute;transform:translate(-50%,-100%);font-weight:700;font-size:15px;color:var(--yel);text-shadow:2px 2px 0 #0a0d10;white-space:nowrap;animation:up 1.9s steps(19) forwards}
 .scene .fl.bad{color:var(--red)}.scene .fl.good{color:var(--green)}.scene .fl.info{color:var(--blue)}.scene .fl.big{font-size:19px}
 @keyframes up{0%{opacity:0;margin-top:6px}10%{opacity:1}75%{opacity:1}100%{opacity:0;margin-top:-34px}}
@@ -323,7 +348,7 @@ summary{cursor:pointer;color:var(--yel);font-weight:600}
 // ================== RANKING ONLINE ==================
 // Cole entre as aspas o endereço do App da Web do Google Apps Script (termina em /exec).
 // Deixe vazio para jogar sem ranking.
-const RANKING_URL = 'https://script.google.com/macros/s/AKfycbzXLGDBkvYUzeCmXGAG2KgbD5uLkbBcyNvJZy_-8gCOTS3Qt3w9nkjHGmeMNY1Aj3lZ/exec';
+const RANKING_URL = '';
 
 // ================== MOTOR DA FÁBRICA ==================
 const rnd=(a,b)=>a+Math.random()*(b-a);
@@ -383,11 +408,45 @@ function makeMatriz(S,min){
   if(r===3){m.lenda=pick(LENDAS);let t2;do{t2=pick(ks);}while(t2===tipo);m.tipo2=t2;m.v2=0.12;}
   return m;
 }
-const nomeMatriz=m=>m.rar===3?`Matriz ${m.lenda}`:`Matriz ${MTIPOS[m.tipo].nome}`;
+const nomeMatriz=m=>m.rar===3?`Matriz ${m.lenda}${m.plus?' +'+m.plus:''}`:`Matriz ${MTIPOS[m.tipo].nome}`;
 const efeitoMatriz=m=>MTIPOS[m.tipo].ef(m.v)+(m.tipo2?` e ${MTIPOS[m.tipo2].ef(m.v2)}`:'');
 const matrizesDe=S=>(S.meta.mats=S.meta.mats||[]);
 const matrizDaPrensa=(S,p)=>p&&p.mat?matrizesDe(S).find(x=>x.id===p.mat)||null:null;
 function bonusMatriz(S,p,tipo){const m=matrizDaPrensa(S,p);if(!m)return 0;return (m.tipo===tipo?m.v:0)+(m.tipo2===tipo?m.v2:0);}
+// ---------- fusão de matrizes (ferramentaria) ----------
+const FUSAO=[{ch:0.70,custo:10000},{ch:0.45,custo:30000},{ch:0.25,custo:80000}];
+const MAX_PLUS=5;
+function novaMatriz(rar,tipo){
+  const m={id:uid(),tipo,rar,v:RARIDADES[rar].v};
+  if(rar===3){m.lenda=pick(LENDAS);let t2;do{t2=pick(Object.keys(MTIPOS));}while(t2===tipo);m.tipo2=t2;m.v2=0.12;}
+  return m;
+}
+function fusaoInfo(ms){
+  if(!ms||ms.length!==3)return null;
+  const r=ms[0].rar;if(ms.some(m=>m.rar!==r))return {erro:'As 3 matrizes precisam ser da mesma raridade.'};
+  const pl=ms[0].plus||0;
+  if(r===3&&ms.some(m=>(m.plus||0)!==pl))return {erro:'As 3 lendárias precisam ter o mesmo nível (+).'};
+  if(r===3&&pl>=MAX_PLUS)return {erro:'Essas lendárias já estão no nível máximo.'};
+  const mesmo=ms.every(m=>m.tipo===ms[0].tipo);
+  const base=r<3?FUSAO[r].ch:0.40, custo=r<3?FUSAO[r].custo:200000*(pl+1);
+  return {r,pl,mesmo,ch:Math.min(0.95,base+(mesmo?0.10:0)),custo,alvo:r<3?RARIDADES[r+1].n:`Lendária +${pl+1}`};
+}
+// junta 3 matrizes da mesma raridade: se der certo, sai uma da raridade de cima; se falhar, volta 1 das 3
+function fundirMatrizes(S,ids){
+  const all=matrizesDe(S),ms=ids.map(id=>all.find(m=>m.id===id)).filter(Boolean);
+  if(new Set(ids).size!==3||ms.length!==3)return null;
+  if(ms.some(m=>S.press.some(p=>p.mat===m.id)))return null;
+  const f=fusaoInfo(ms);if(!f||f.erro||S.cash<f.custo)return null;
+  S.cash-=f.custo;
+  S.meta.mats=all.filter(m=>!ids.includes(m.id));
+  const ok=Math.random()<f.ch;let res;
+  if(!ok)res=ms[0];
+  else if(f.r<3)res=novaMatriz(f.r+1,f.mesmo?ms[0].tipo:pick(ms).tipo);
+  else{const b=ms[0];res={...b,id:uid(),plus:f.pl+1,v:RARIDADES[3].v+0.05*(f.pl+1),v2:0.12+0.03*(f.pl+1)};}
+  S.meta.mats.push(res);
+  S.meta.fus=(S.meta.fus||0)+1;if(ok)S.meta.fusOk=(S.meta.fusOk||0)+1;
+  return {ok,res,f,usadas:ms};
+}
 function ganharMatriz(S,min,ev,origem){
   const m=makeMatriz(S,min);
   if(matrizesDe(S).length>=MAX_MATRIZES){const v=RARIDADES[m.rar].venda;S.cash+=v;ev('matriz',{m,vendida:v,origem});return m;}
@@ -989,13 +1048,14 @@ function drawPressSm(c,x,y,p,t,spd){
 }
 
 // ---------- estado da cena ----------
-const Scene={ents:{},parts:[],trucks:[],wander:{},shakeT:0};
+const Scene={ents:{},parts:[],trucks:[],wander:{},shakeT:0,docas:[null,null],paletes:[[],[]]};
 const slotXY=i=>{const col=i%SC.COLS,row=Math.floor(i/SC.COLS);return {x0:4+col*SC.CELL,y0:SC.TOP+row*(SC.ROWH+SC.AISLE),row};};
 const walkY=row=>row>=2?SC.DOCK+17:SC.TOP+row*(SC.ROWH+SC.AISLE)+SC.ROWH+9;
 const rowOfY=y=>y>=SC.DOCK?2:Math.min(1,Math.floor((y-SC.TOP-1)/(SC.ROWH+SC.AISLE)));
-const IDLE={operador:[54,61,68,75],preparador:[84,90],tecnico:[97,103],lider:[110],inspetor:[116,122],metrologista:[129],comprador:[135]};
-function idleSpot(s,i){const a=IDLE[s.role]||[20];return {x:a[i%a.length]+(Math.floor(i/a.length)*5)%12,y:SC.DOCK+22};}
-const forkPark=i=>({x:60+i*18,y:SC.DOCK+12});
+const IDLE={operador:[56,61,66,71],preparador:[76,81],tecnico:[86,90],lider:[58],inspetor:[63,68],metrologista:[73],comprador:[78]};
+const IDLE_FUNDO={lider:1,inspetor:1,metrologista:1,comprador:1};
+function idleSpot(s,i){const a=IDLE[s.role]||[60];return {x:a[i%a.length]+(Math.floor(i/a.length)*3)%7,y:SC.DOCK+(IDLE_FUNDO[s.role]?28:22)};}
+const forkPark=i=>({x:60+i*14,y:SC.DOCK+12});
 const RACK={x:52,y:SC.DOCK+19};
 function targetFor(s,idx,now){
   if(s.role==='empilhadeira'){
@@ -1067,7 +1127,7 @@ function sceneUpdate(now,dt){
   });
   for(const id in Scene.ents)if(!seen[id])delete Scene.ents[id];
   Scene.parts=Scene.parts.filter(p=>{p.life-=dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=90*dt;return p.life>0;});
-  Scene.trucks=Scene.trucks.filter(tr=>{tr.t+=dt;return tr.t<5;});
+  stepExpedicao(dt);
 }
 // cores do chão de fábrica em cada país
 const TEMAS=[
@@ -1113,20 +1173,11 @@ function sceneDraw(cv,now){
   F(0,SC.DOCK,W,H-SC.DOCK,T.doca);for(let x=0;x<W;x+=6)F(x,SC.DOCK,3,1,'#f2c230');
   // estoque de bobinas
   drawCoilYard(c,now);
-  // bancada
-  F(118,SC.DOCK+6,20,4,'#6b5a45');F(118,SC.DOCK+10,2,6,'#4a3d2f');F(136,SC.DOCK+10,2,6,'#4a3d2f');F(122,SC.DOCK+4,4,2,'#c9d3da');F(129,SC.DOCK+3,3,3,'#e5534b');
+  drawBoxes(c);
   if(melh(S,'clima'))drawClima(c,now);
   if(melh(S,'eletrica'))drawCarregador(c,now);
   // porta da doca
   F(W-10,SC.DOCK+2,10,H-SC.DOCK-2,'#15191e');for(let y=SC.DOCK+2;y<H;y+=4)F(W-10,y,10,2,y%8<4?'#f2c230':'#15191e');
-  // caminhões
-  for(const tr of Scene.trucks){
-    const k=tr.t<1.2?tr.t/1.2:tr.t<3.4?1:1-(tr.t-3.4)/1.6;
-    const x=W-10-k*52, y=SC.DOCK+6;
-    F(x,y,30,11,'#e9edf0');F(x,y+4,30,2,'#f2c230');F(x+30,y+3,8,8,'#f2c230');F(x+33,y+4,4,3,'#9cc0de');
-    F(x+4,y+11,5,4,'#15191e');F(x+22,y+11,5,4,'#15191e');F(x+32,y+11,5,4,'#15191e');
-    F(x+5,y+12,3,2,'#6d7a87');F(x+23,y+12,3,2,'#6d7a87');F(x+33,y+12,3,2,'#6d7a87');
-  }
   // montagem da lista a desenhar (ordenada pela altura)
   const list=[];
   const spd=S.speed||1;
@@ -1152,6 +1203,7 @@ function sceneDraw(cv,now){
       if(first){F(x0+21,y0+19,4,12,col);F(x0+17,y0+23,12,4,col);}
     }});
   }
+  for(let l=0;l<2;l++){list.push({y:BAY_Y[l]+10,d:()=>drawPaletes(c,l,now)});const tr=Scene.docas[l];if(tr)list.push({y:BAY_Y[l]+14,d:()=>drawCaminhao(c,tr,l)});}
   for(const s of S.staff){const e=Scene.ents[s.id];if(!e)continue;
     list.push({y:e.y,d:()=>{
       const t=RM?0:now+e.ph;
@@ -1212,6 +1264,7 @@ function drawMatrizIcon(c,m,now){
   if(m.rar>=2){F(2,6,12,1,K.t);F(2,10,12,1,K.t);}
   if(m.rar===3){F(7,12,2,2,'#ec5a50');F(7,12,1,1,'#ffb3ad');
     const k=Math.floor(now/90)%28;for(let i=0;i<16;i++){const y=i,x=k-i;if(x>=2&&x<14&&((y>=2&&y<7)||(y>=10&&y<15)))F(x,y,1,1,'#ffffffaa');}}
+  if(m.plus)for(let i=0;i<m.plus;i++){F(2+i*3,15,2,1,'#ffffff');F(2+i*3,15,1,1,'#f2c230');}
   if(m.rar>=2){const t=Math.floor(now/250)%8;const pts=[[14,1],[1,8],[14,15],[0,1]];const p=pts[t%4];if(t<4){F(p[0],p[1],1,1,'#ffffff');}}
 }
 // matriz montada dentro da prensa: metade de cima no martelo, metade de baixo na mesa
@@ -1276,9 +1329,63 @@ function drawClima(c,now){
 // carregador das empilhadeiras elétricas
 function drawCarregador(c,now){
   const F=(x,y,w,h,col)=>{c.fillStyle=col;c.fillRect(Math.round(x),Math.round(y),w,h);};
-  const x=SC.W-30,y=SC.DOCK+3;
+  const x=47,y=SC.DOCK+3;
   F(x,y,6,9,'#3a3f47');F(x,y,6,1,'#5a616b');F(x+1,y+2,4,2,'#15191e');F(x+2,y+2,Math.floor(now/400)%3+1,2,'#5cc26b');
   F(x+2,y+5,1,1,'#7fe3ff');F(x+3,y+6,1,1,'#7fe3ff');F(x+2,y+7,1,1,'#7fe3ff');F(x+6,y+7,3,1,'#15191e');
+}
+// ---------- expedição: dois boxes de carga, paletes prontos e fila de caminhões ----------
+const BAY_Y=[SC.DOCK+1,SC.DOCK+15], BAY_X=124, STAGE_X=112;
+const COR_PECA={sup:'#d0574f',dob:'#4f8ac9',trv:'#4fbf86',col:'#d0a64f',lon:'#9b6fd1',ass:'#e07b39'};
+// chamado quando um pedido chega na doca: o palete fica no chão até um caminhão levar
+function novaEntrega(info){
+  const carga=l=>Scene.paletes[l].length+(Scene.docas[l]&&Scene.docas[l].ph!=='out'?1:0);
+  const l=carga(0)<=carga(1)?0:1;
+  Scene.paletes[l].push(info);
+  if(Scene.paletes[l].length>12){const v=Scene.paletes[l].shift();if(v.cb)v.cb();}
+}
+function stepExpedicao(dt){
+  const fila=Scene.paletes[0].length+Scene.paletes[1].length;const k=1+0.35*fila;
+  for(let l=0;l<2;l++){
+    let tr=Scene.docas[l];
+    if(!tr&&Scene.paletes[l].length){tr=Scene.docas[l]={ph:'in',t:0,carga:null};}
+    if(!tr)continue;
+    tr.t+=dt*k;
+    if(tr.ph==='in'&&tr.t>=1.2){tr.ph='load';tr.t=0;}
+    else if(tr.ph==='load'){
+      if(!tr.carga&&tr.t>=0.3&&Scene.paletes[l].length){tr.carga=Scene.paletes[l].shift();}
+      if(tr.t>=1.0){tr.ph='out';tr.t=0;if(tr.carga&&tr.carga.cb)tr.carga.cb();}
+    }
+    else if(tr.ph==='out'&&tr.t>=1.4)Scene.docas[l]=null;
+  }
+}
+function drawBoxes(c){
+  const F=(x,y,w,h,col)=>{c.fillStyle=col;c.fillRect(Math.round(x),Math.round(y),w,h);};
+  for(let l=0;l<2;l++){const y=BAY_Y[l];
+    for(let x=BAY_X-16;x<SC.W-10;x+=4)F(x,y+15,2,1,'#f2c230');
+    F(BAY_X-16,y,1,15,'#f2c23088');
+    F(SC.W-14,y+2,3,5,'#15191e');F(SC.W-13,y+3,1,3,'#f2c230');if(l===1){F(SC.W-14,y+3,3,1,'#f2c230');F(SC.W-14,y+5,3,1,'#f2c230');}
+  }
+}
+function drawPalete(F,x,y,cor){
+  F(x,y+7,9,2,'#8a5a2b');F(x,y+8,1,1,'#4a3622');F(x+4,y+8,1,1,'#4a3622');F(x+8,y+8,1,1,'#4a3622');
+  F(x,y,9,7,'#c99a5b');F(x,y,9,1,'#e0b77c');F(x+4,y,1,7,'#9b7447');F(x,y+3,9,1,'#9b7447');F(x+1,y+1,2,1,cor);F(x+6,y+4,2,1,cor);
+}
+function drawPaletes(c,l,now){
+  const F=(x,y,w,h,col)=>{c.fillStyle=col;c.fillRect(Math.round(x),Math.round(y),w,h);};
+  const ps=Scene.paletes[l],y=BAY_Y[l]+4;
+  ps.slice(0,2).forEach((p,i)=>drawPalete(F,STAGE_X-i*10,y,p.cor||'#c3cad1'));
+  if(ps.length>2){F(STAGE_X-22,y+1,8,7,'#15191e');c.fillStyle='#f2c230';c.font='6px monospace';c.fillText('+'+(ps.length-2),STAGE_X-22,y+7);}
+}
+function drawCaminhao(c,tr,l){
+  const F=(x,y,w,h,col)=>{c.fillStyle=col;c.fillRect(Math.round(x),Math.round(y),w,h);};
+  const fora=SC.W+2,ate=BAY_X;
+  const p=tr.ph==='in'?Math.min(1,tr.t/1.2):tr.ph==='load'?1:Math.max(0,1-tr.t/1.4);
+  const ease=p*p*(3-2*p),x=fora+(ate-fora)*ease,y=BAY_Y[l];
+  F(x,y,30,11,'#e9edf0');F(x,y,30,1,'#ffffff');F(x,y+4,30,2,'#f2c230');F(x,y+1,1,10,'#9aa6b1');
+  F(x+30,y+3,8,8,'#3f6fb5');F(x+33,y+4,4,3,'#9cc0de');F(x+30,y+3,8,1,'#5b8fd0');
+  F(x+4,y+11,5,4,'#15191e');F(x+22,y+11,5,4,'#15191e');F(x+32,y+11,5,4,'#15191e');
+  F(x+5,y+12,3,2,'#6d7a87');F(x+23,y+12,3,2,'#6d7a87');F(x+33,y+12,3,2,'#6d7a87');
+  if(tr.ph==='load'&&tr.carga){const q=Math.max(0,Math.min(1,(tr.t-0.3)/0.6));drawPalete(F,STAGE_X+(x+2-STAGE_X)*q,y+2,tr.carga.cor||'#c3cad1');}
 }
 // rolo de aço visto de frente: borda escura, espiras, brilho em cima à esquerda, furo no meio e cinta azul
 function rolo(F,cx,cy,r,ext,mid){const R=Math.ceil(r),furo=Math.max(0.8,r*0.24);
@@ -1444,14 +1551,14 @@ function snd(type){
 // ---------- eventos da simulação ----------
 function log(txt,k=''){S.log.unshift({t:S.t,txt,k});if(S.log.length>40)S.log.pop();}
 function toast(msg,k=''){const box=$('#toasts');while(box.children.length>=3)box.firstChild.remove();const el=document.createElement('div');el.className='toast '+k;el.textContent=msg;box.appendChild(el);setTimeout(()=>el.remove(),4000);}
-const DOCKX=148;
+const DOCKX=108;
 function ev(type,d){
   const pn=p=>`Prensa ${p.n}`;
   const now=performance.now();
   switch(type){
     case 'entrega':{const o=d.o;
-      Scene.trucks.push({t:0});
-      setTimeout(()=>{coinBurst(DOCKX,SC.DOCK+6,d.comp?6:16);floatAt(DOCKX,SC.DOCK+4,'+'+brl(d.receita-(d.aco||0)),'big');},RM?0:900);
+      // o palete fica na doca; quando o caminhão carrega, aparece o dinheiro
+      novaEntrega({cor:COR_PECA[o.part],cb:()=>{coinBurst(BAY_X+15,SC.DOCK+8,d.comp?6:16);floatAt(BAY_X+10,SC.DOCK+4,'+'+brl(d.receita-(d.aco||0)),'big');}});
       snd('coin');
       log(`Entrega feita para a ${o.cli}: recebeu ${brl(d.receita)}, pagou ${brl(d.aco||0)} de aço, sobrou ${brl(d.receita-(d.aco||0))}${d.late?' (atrasou, com desconto)':''}.`,d.late?'warn':'gold');
       if(d.comp){setTimeout(()=>{floatAt(DOCKX-30,SC.DOCK-2,'Reclamação!','bad');snd('bad');},RM?0:1500);
@@ -1535,6 +1642,8 @@ const TROPHIES=[
   {id:'tec10',n:'Cientista',d:'Compre 10 níveis de tecnologia.',r:0,ok:()=>Object.values(S.meta.ups||{}).reduce((a,b)=>a+b,0)>=10},
   {id:'lenda',n:'Achado lendário',d:'Consiga uma matriz lendária.',r:20000,ok:()=>matrizesDe(S).some(m=>m.rar===3)},
   {id:'colec',n:'Colecionador',d:'Junte 10 matrizes.',r:15000,ok:()=>matrizesDe(S).length>=10},
+  {id:'forja1',n:'Forjador',d:'Faça a primeira fusão de matrizes que dê certo.',r:10000,ok:()=>(S.meta.fusOk||0)>=1},
+  {id:'plus1',n:'Lenda viva',d:'Crie uma matriz Lendária +1 na ferramentaria.',r:50000,ok:()=>matrizesDe(S).some(x=>x.plus>=1)},
   {id:'up5',n:'Prensa no talo',d:'Leve uma prensa ao nível 5.',r:20000,ok:()=>S.press.some(p=>(p.lv||1)>=5)},
   {id:'urg5',n:'Contra o relógio',d:'Entregue 5 pedidos urgentes no prazo.',r:15000,ok:()=>(S.meta.urgOk||0)>=5},
   {id:'negoc',n:'Negociador',d:'Instale os 6 itens do catálogo de fornecedores no mesmo país.',r:30000,ok:()=>CAT_ORDER.every(k=>melh(S,k))},
@@ -1640,7 +1749,7 @@ function drawPortraits(now){
     const t=RM?0:now+(s.id.charCodeAt(0)*97);
     drawGuy(x,1,2+(Math.floor(t/650)%2),s,{blink:Math.floor(t/100)%40===0});
   });
-  document.querySelectorAll('canvas[data-mat]').forEach(c=>{const m=matrizesDe(S).find(x=>x.id===c.dataset.mat)||(c.dataset.mat==='_drop'&&ULT_MAT);if(m)drawMatrizIcon(c.getContext('2d'),m,RM?0:now);});
+  document.querySelectorAll('canvas[data-mat]').forEach(c=>{const m=matrizesDe(S).find(x=>x.id===c.dataset.mat)||TMP_MATS[c.dataset.mat]||(c.dataset.mat==='_drop'&&ULT_MAT);if(m)drawMatrizIcon(c.getContext('2d'),m,RM?0:now);});
   document.querySelectorAll('canvas[data-pressimg]').forEach(c=>{
     const x=c.getContext('2d');x.clearRect(0,0,c.width,c.height);
     const p=c.dataset.pressimg.startsWith('p')&&PRESSES[c.dataset.pressimg]?{tipo:c.dataset.pressimg,st:'run'}:pressById(c.dataset.pressimg);
@@ -1884,8 +1993,6 @@ function sceneLabels(){
     el.textContent=p?`P${p.n} ${PRESSES[p.tipo].t}t${(p.lv||1)>1?' '+'★'.repeat(p.lv-1):''}${p.mat?' ◆':''}`:'Comprar';
     el.style.left=((x0+(p?1:10))/SC.W*100)+'%';el.style.top=((y0+(p?1:44))/SC.H*100)+'%';
     ov.appendChild(el);}
-  const pt=document.createElement('span');pt.className='lab yard';pt.textContent='Bobinas';
-  pt.style.left=(4/SC.W*100)+'%';pt.style.top=((SC.DOCK+4)/SC.H*100)+'%';ov.appendChild(pt);
 }
 
 // ---------- telas ----------
@@ -2081,20 +2188,52 @@ function vProgresso(){
   const autos=Object.entries(AUTOS).map(([k,a])=>{const tem=!!(S.meta.auto&&S.meta.auto[k]);const on=autoLigada(S,k);
     return `<div class="card"><div class="row between wrap"><b>${a.nome}</b>${tem?`<span class="pill ${on?'good':'muted'}">${on?'Ligado':'Desligado'}</span>`:''}</div><div class="tiny">${a.desc}</div>
       ${tem?`<button class="btn sm ghost" data-act="toggleAuto" data-arg="${k}">${on?'Desligar':'Ligar'}</button>`:`<button class="btn sm" data-act="buyAuto" data-arg="${k}" data-cost="${a.preco}">Comprar por ${brl(a.preco)}</button>`}</div>`;}).join('');
-  const ms=matrizesDe(S).slice().sort((a,b)=>b.rar-a.rar);
-  const mcards=ms.map(x=>{const R=RARIDADES[x.rar],em=S.press.find(q=>q.mat===x.id);
-    return `<div class="card mcard" style="--c:${R.c}"><div class="row between wrap"><span class="row"><canvas class="px matico r${x.rar}" data-mat="${x.id}" width="16" height="16"></canvas><b style="color:${R.c}">${nomeMatriz(x)}</b></span><span class="pill" style="color:${R.c}">${R.n}</span></div>
-      <div class="tiny">${efeitoMatriz(x)}.</div><div class="tiny">${em?`Equipada na Prensa ${em.n}`:'Guardada. Equipe pela ficha de uma prensa.'}</div>
-      ${em?'':`<button class="btn sm ghost" data-act="sellMat" data-arg="${x.id}">Vender por ${brl(R.venda)}</button>`}</div>`;}).join('');
-  return salto+vant+`<section class="panel"><div class="phead"><h2>Escritório</h2><span class="tiny">Comprado com dinheiro, vale para sempre, em todos os países.</span></div>
-    <p class="muted">Com o PCP automático, a fábrica continua aceitando pedidos enquanto você está fora, por até ${horasOffline(S)} h de produção.</p><div class="grid">${autos}</div></section>
-  <section class="panel"><div class="phead"><h2>Matrizes</h2><span class="tiny">${ms.length} de ${MAX_MATRIZES}. As matrizes vão com você para o próximo país.</span></div>
-    ${ms.length?`<div class="grid">${mcards}</div>`:'<p class="empty">Nenhuma ainda. Matrizes caem de pedidos entregues no prazo, e os pedidos urgentes sempre dão uma rara ou melhor.</p>'}</section>
-  <section class="panel"><div class="phead"><h2>Tecnologias</h2><span class="gold">${m.pat} ${m.pat===1?'patente disponível':'patentes disponíveis'}</span></div>
-    <p class="muted">Tecnologias são permanentes: valem em todos os países daqui para frente.</p><div class="grid">${techs}</div></section>
-  <section class="panel"><div class="phead"><h2>Troféus</h2><span class="tiny">${got.length} de ${TROPHIES.length}</span></div>
+  const ms=matrizesDe(S);
+  const secoes=[['expansao','Expansão'],['tecnologias','Tecnologias'+(m.pat?` (${m.pat})`:'')],['escritorio','Escritório'],['matrizes',`Matrizes (${ms.length})`],['trofeus',`Troféus ${got.length}/${TROPHIES.length}`]];
+  const sub=`<nav class="subtabs" aria-label="Seções do progresso">${secoes.map(([k,n])=>`<button data-act="progTab" data-arg="${k}" aria-current="${PROG_TAB===k?'page':'false'}">${n}</button>`).join('')}</nav>`;
+  let corpo='';
+  if(PROG_TAB==='expansao')corpo=salto+vant;
+  else if(PROG_TAB==='tecnologias')corpo=`<section class="panel"><div class="phead"><h2>Tecnologias</h2><span class="gold">${m.pat} ${m.pat===1?'patente disponível':'patentes disponíveis'}</span></div>
+    <p class="muted">Tecnologias são permanentes: valem em todos os países daqui para frente.</p><div class="grid">${techs}</div></section>`;
+  else if(PROG_TAB==='escritorio')corpo=`<section class="panel"><div class="phead"><h2>Escritório</h2><span class="tiny">Comprado com dinheiro, vale para sempre, em todos os países.</span></div>
+    <p class="muted">Com o PCP automático, a fábrica continua aceitando pedidos enquanto você está fora, por até ${horasOffline(S)} h de produção.</p><div class="grid">${autos}</div></section>`;
+  else if(PROG_TAB==='matrizes')corpo=vMatrizes();
+  else corpo=`<section class="panel"><div class="phead"><h2>Troféus</h2><span class="tiny">${got.length} de ${TROPHIES.length}</span></div>
     <div class="trophies">${TROPHIES.map(t=>{const on=got.includes(t.id);return `<div class="trophy ${on?'':'off'}"><canvas class="px" data-trophy="${on?1:0}" width="16" height="16"></canvas><div><b class="${on?'gold':''}">${t.n}</b><span class="tiny">${t.d}${t.r?` Prêmio ${brl(t.r)}.`:''}</span></div></div>`;}).join('')}</div></section>
-  <section class="panel"><h2>Recomeçar do zero</h2><p class="muted">Apaga tudo deste aparelho, inclusive patentes, tecnologias, vantagens, países e troféus. Para mudar de país mantendo o progresso, use a expansão internacional lá em cima.</p><div><button class="btn danger" data-act="reset">Apagar tudo e recomeçar</button></div></section>`;
+  <section class="panel"><h2>Recomeçar do zero</h2><p class="muted">Apaga tudo deste aparelho, inclusive patentes, tecnologias, vantagens, países e troféus. Para mudar de país mantendo o progresso, use a expansão internacional.</p><div><button class="btn danger" data-act="reset">Apagar tudo e recomeçar</button></div></section>`;
+  return sub+corpo;
+}
+// ---------- matrizes: grade compacta + ferramentaria (fusão) ----------
+let PROG_TAB='expansao',FUS=[];const TMP_MATS={};
+const matPorId=id=>matrizesDe(S).find(x=>x.id===id);
+const prensaDaMat=id=>S.press.find(q=>q.mat===id);
+function tileMat(x){const em=prensaDaMat(x.id),sel=FUS.includes(x.id);
+  return `<button class="mtile r${x.rar}${sel?' sel':''}" data-act="matInfo" data-arg="${x.id}" title="${esc(nomeMatriz(x))}: ${esc(efeitoMatriz(x))}"><canvas class="px" data-mat="${x.id}" width="16" height="16"></canvas>${em?`<span class="eq">P${em.n}</span>`:''}${x.plus?`<span class="pl">+${x.plus}</span>`:''}${sel?'<span class="ck">✓</span>':''}</button>`;}
+function vMatrizes(){
+  FUS=FUS.filter(id=>matPorId(id)&&!prensaDaMat(id));
+  const ms=matrizesDe(S),sel=FUS.map(matPorId),f=sel.length===3?fusaoInfo(sel):null;
+  const slots=[0,1,2].map(i=>{const x=sel[i];return x?`<button class="mtile r${x.rar} slot" data-act="fusDel" data-arg="${x.id}" title="Tirar da fusão"><canvas class="px" data-mat="${x.id}" width="16" height="16"></canvas>${x.plus?`<span class="pl">+${x.plus}</span>`:''}</button>`:'<span class="mtile vazio">?</span>';}).join('<span class="mais">+</span>');
+  const info=!sel.length?'Escolha 3 matrizes da mesma raridade (toque numa matriz e em "Colocar na fusão"), ou use o botão automático.'
+    :sel.length<3?`Faltam ${3-sel.length}.`
+    :f.erro?`<span class="bad">${f.erro}</span>`
+    :`Chance de virar <b>${f.alvo}</b>: <b class="gold">${Math.round(f.ch*100)}%</b>${f.mesmo?' (inclui +10% por serem do mesmo tipo)':''}. Custo ${brl(f.custo)}. Se falhar, volta 1 das 3.`;
+  const fus=`<section class="panel forja"><div class="phead"><h2>Ferramentaria</h2><span class="tiny">Funda 3 matrizes da mesma raridade para tentar uma melhor</span></div>
+    <div class="fslots">${slots}<span class="mais">=</span><span class="mtile vazio alvo">${f&&!f.erro?'★':'?'}</span></div>
+    <p class="tiny">${info}</p>
+    <div class="row wrap"><button class="btn" data-act="fusGo" ${f&&!f.erro?`data-cost="${f.custo}"`:'disabled data-lock'}>${f&&!f.erro?`Fundir por ${brl(f.custo)}`:'Fundir'}</button><button class="btn ghost" data-act="fusAuto">Escolher automático</button>${sel.length?'<button class="btn ghost" data-act="fusClear">Limpar</button>':''}</div>
+    <p class="tiny">Chances: 3 Comuns → Rara 70% · 3 Raras → Épica 45% · 3 Épicas → Lendária 25% · 3 Lendárias iguais → Lendária +1 40%. Matriz montada numa prensa não entra.</p></section>`;
+  const grupos=[3,2,1,0].map(r=>{const g=ms.filter(x=>x.rar===r).sort((a,b)=>(b.plus||0)-(a.plus||0)||a.tipo.localeCompare(b.tipo));if(!g.length)return '';const R=RARIDADES[r];
+    return `<div class="mgrupo"><div class="mgh" style="color:${R.c}">${R.n}s <span class="tiny">${g.length}</span></div><div class="mgrid">${g.map(tileMat).join('')}</div></div>`;}).join('');
+  return fus+`<section class="panel"><div class="phead"><h2>Depósito de matrizes</h2><span class="tiny">${ms.length} de ${MAX_MATRIZES}. Vão com você para o próximo país. Toque numa para ver.</span></div>
+    ${ms.length?grupos:'<p class="empty">Nenhuma ainda. Matrizes caem de pedidos entregues no prazo, e os pedidos urgentes sempre dão uma rara ou melhor.</p>'}</section>`;
+}
+function showMat(id){
+  const x=matPorId(id);if(!x)return closeModal();const R=RARIDADES[x.rar],em=prensaDaMat(id),na=FUS.includes(id);
+  openModal(`<div class="matrev r${x.rar}"><canvas class="px" data-mat="${x.id}" width="16" height="16"></canvas></div>
+    <h2 style="color:${R.c};text-align:center">${nomeMatriz(x)}</h2><p style="text-align:center;margin-inline:auto"><span class="pill" style="color:${R.c}">${R.n}</span></p>
+    <p class="muted" style="text-align:center;margin-inline:auto">${efeitoMatriz(x)}.</p>
+    <p class="tiny" style="text-align:center;margin-inline:auto">${em?`Montada na Prensa ${em.n}. Para fundir ou vender, tire ela da prensa pela ficha da prensa.`:'Guardada no depósito. Para montar numa prensa, toque na prensa e escolha a matriz.'}</p>
+    <div class="row wrap">${em?'':`<button class="btn" data-act="${na?'fusDel':'fusAdd'}" data-arg="${x.id}" ${!na&&FUS.length>=3?'disabled data-lock':''}>${na?'Tirar da fusão':FUS.length>=3?'Fusão cheia':'Colocar na fusão'}</button><button class="btn ghost" data-act="sellMat" data-arg="${x.id}">Vender por ${brl(R.venda)}</button>`}<button class="btn ghost" data-act="close">Fechar</button></div>`,'help',id);
 }
 function vRanking(){
   if(!rankLigado())return `<section class="panel"><h2>Ranking</h2><p class="muted">O ranking online ainda não está ligado nesta cópia do jogo. Quem publicou o jogo precisa colar o endereço da planilha do ranking no começo do arquivo, como explica o guia.</p></section>`;
@@ -2147,7 +2286,7 @@ function passosInicio(){
   ];
 }
 function tutorialInicio(primeira){TUT={passos:passosInicio(),i:0,primeira:!!primeira};tutMostra();}
-function tutorialPais(ganho,k){
+function tutorialPais(ganho,k){PROG_TAB='tecnologias';
   const u=uniDe(S),b=k&&BONUS[k];
   TUT={passos:[{tab:'progresso',hl:tabSel('progresso'),fim:'Vamos nessa!',t:`Bem-vindo ${aoPais(u)}! A filial nova está pronta e eu vim junto para ajudar no RH. Você trouxe <b class="gold">${ganho} patentes</b> para gastar em tecnologias aqui em Progresso${b?`, e a vantagem <b>${b.nome}</b> já está valendo`:''}. Agora é reconstruir, mais forte!`}],i:0};
   tutMostra();
@@ -2187,7 +2326,34 @@ function tutFim(){
 
 // ---------- ações ----------
 const ACT={
-  tutNext:()=>{if(!TUT)return;if(TUT.mostrado<TUT.len){TUT.ini=-1e9;return;}if(TUT.i<TUT.passos.length-1){TUT.i++;tutMostra();}else tutFim();},
+  progTab:k=>{PROG_TAB=k;sig='';},
+  matInfo:id=>showMat(id),
+  fusAdd:id=>{if(FUS.length<3&&!FUS.includes(id)&&!prensaDaMat(id))FUS.push(id);snd('click');closeModal();PROG_TAB='matrizes';sig='';},
+  fusDel:id=>{FUS=FUS.filter(x=>x!==id);if(modal)closeModal();sig='';},
+  fusClear:()=>{FUS=[];sig='';},
+  fusAuto:()=>{const livres=matrizesDe(S).filter(x=>!prensaDaMat(x.id));let melhor=null;
+    // menor raridade com 3 disponíveis; dentro dela, prefere 3 do mesmo tipo (e, nas lendárias, o mesmo +)
+    for(const r of [0,1,2,3]){const g=livres.filter(x=>x.rar===r);const grupos={};
+      for(const x of g){const k=r===3?String(x.plus||0):'*';(grupos[k]=grupos[k]||[]).push(x);}
+      for(const k in grupos){const lst=grupos[k];if(lst.length<3)continue;if(r===3&&+k>=MAX_PLUS)continue;
+        const porTipo={};lst.forEach(x=>(porTipo[x.tipo]=porTipo[x.tipo]||[]).push(x));const mesmo=Object.values(porTipo).find(v=>v.length>=3);
+        melhor=(mesmo||lst).slice(0,3);break;}
+      if(melhor)break;}
+    if(!melhor){toast('Ainda não tem 3 matrizes livres da mesma raridade.','warn');return;}
+    FUS=melhor.map(x=>x.id);snd('click');sig='';},
+  fusGo:()=>{const ids=FUS.slice();const antes=ids.map(matPorId);const f=fusaoInfo(antes);if(!f||f.erro||S.cash<f.custo)return;
+    antes.forEach((x,i)=>TMP_MATS['_f'+i]=x);
+    openModal(`<div class="brand">Ferramentaria</div><h2 style="text-align:center">Fundindo...</h2><div class="forjaanim">${[0,1,2].map(i=>`<canvas class="px f${i}" data-mat="_f${i}" width="16" height="16"></canvas>`).join('')}</div>`,'confirm');
+    snd('click');
+    setTimeout(()=>{const r=fundirMatrizes(S,ids);FUS=[];if(!r){closeModal();return;}
+      TMP_MATS._res=r.res;const R=RARIDADES[r.res.rar];
+      if(r.ok){snd('trophy');log(`Fusão deu certo: ${nomeMatriz(r.res)} (${R.n.toLowerCase()})!`,'gold');}
+      else{snd('bad');log(`A fusão falhou. Sobrou a ${nomeMatriz(r.res)}.`,'warn');}
+      openModal(`<div class="brand" style="color:${r.ok?R.c:'var(--orange)'}">${r.ok?'Deu certo!':'Não foi dessa vez...'}</div>
+        <div class="matrev r${r.res.rar}"><canvas class="px" data-mat="_res" width="16" height="16"></canvas></div>
+        <h2 style="color:${R.c};text-align:center">${nomeMatriz(r.res)}</h2>
+        <p class="muted" style="text-align:center;margin-inline:auto">${r.ok?`${R.n}: ${efeitoMatriz(r.res)}.`:`As outras 2 se perderam na forja, mas esta voltou para o depósito. Chance era de ${Math.round(r.f.ch*100)}%.`}</p>
+        <button class="btn wide" data-act="close">${r.ok?'Guardar no depósito':'Tentar de novo depois'}</button>`,'help');sig='';save();},RM?50:1600);},  tutNext:()=>{if(!TUT)return;if(TUT.mostrado<TUT.len){TUT.ini=-1e9;return;}if(TUT.i<TUT.passos.length-1){TUT.i++;tutMostra();}else tutFim();},
   tutSkip:()=>tutFim(),
   tutAgain:()=>{closeModal();tutorialInicio(false);},
   tab:a=>{tab=a;sig='';window.scrollTo({top:0});},
@@ -2221,7 +2387,7 @@ const ACT={
   takeOffer:()=>{const o=S.oferta;if(!o)return;const ok=aceitarOferta(S);if(!ok){toast('Não deu para fechar a oferta: confira o caixa ou o espaço no galpão.','warn');return;}
     snd('buy');const t={aco:'Contrato de aço fechado!',matriz:'Matriz comprada!',prensa:'Prensa seminova instalada!',catalogo:`Instalado com desconto: ${o.k&&CATALOGO[o.k]?CATALOGO[o.k].nome:"melhoria"}!`}[o.tipo];
     toast(t,'good');log(`Oferta relâmpago aproveitada: ${t}`,'gold');if(o.tipo==='prensa')sceneLabels();},
-  sellMat:id=>{const m=matrizesDe(S).find(x=>x.id===id);if(!m||S.press.some(q=>q.mat===id))return;S.meta.mats=matrizesDe(S).filter(x=>x!==m);S.cash+=RARIDADES[m.rar].venda;snd('coin');toast(`${nomeMatriz(m)} vendida por ${brl(RARIDADES[m.rar].venda)}.`,'good');},
+  sellMat:id=>{FUS=FUS.filter(x=>x!==id);if(modal==='help'&&modalRef===id)closeModal();const m=matrizesDe(S).find(x=>x.id===id);if(!m||S.press.some(q=>q.mat===id))return;S.meta.mats=matrizesDe(S).filter(x=>x!==m);S.cash+=RARIDADES[m.rar].venda;snd('coin');toast(`${nomeMatriz(m)} vendida por ${brl(RARIDADES[m.rar].venda)}.`,'good');},
   sell:id=>{const p=pressById(id);if(!p)return;
     confirmModal(`Vender a Prensa ${p.n} (${PRESSES[p.tipo].t} t) por ${brl(valorVenda(p))}? Se ela estiver com um pedido, ele volta para a fila, e o operador fica livre para outra prensa.`,'sellYes',id,`Vender por ${brl(valorVenda(p))}`);},
   sellYes:id=>{const p=pressById(id);if(!p)return closeModal();const n=p.n,t=PRESSES[p.tipo].t;const v=venderPrensa(S,id);closeModal();
@@ -2247,7 +2413,7 @@ const ACT={
       <button class="btn ghost wide" data-act="close">Voltar</button>`,'confirm');},
   pickBon:k=>{if(!patentesPara(S))return closeModal();if(k)escolherBonus(S,k);const r=saltarUniverso(S);if(!r)return closeModal();
     closeModal();portalAnim();snd('trophy');
-    S=r.N;Scene.ents={};Scene.trucks=[];Scene.parts=[];RK.ultimoEnvio=0;
+    S=r.N;Scene.ents={};Scene.trucks=[];Scene.docas=[null,null];Scene.paletes=[[],[]];Scene.parts=[];RK.ultimoEnvio=0;
     log(`Bem-vindo ${aoPais(uniDe(S))}! Você trouxe ${r.ganho} patentes${k?` e a vantagem ${BONUS[k].nome}`:''}.`,'gold');
     tab='fabrica';sig='';save();enviarRanking(true);
     setTimeout(()=>tutorialPais(r.ganho,k),RM?60:1900);},
@@ -2340,4 +2506,5 @@ if(S){
 requestAnimationFrame(t=>{lastT=t;loop(t);});
 
 </script>
+
 </body></html>
