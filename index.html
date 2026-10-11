@@ -282,7 +282,8 @@ summary{cursor:pointer;color:var(--yel);font-weight:600}
 .answers button.wrong{border-color:var(--red);box-shadow:inset 0 0 0 2px var(--red)}
 .verdict{font-family:var(--display);font-size:20px}
 .mhead{display:flex;gap:14px;align-items:center}
-#toasts{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(14px + env(safe-area-inset-bottom,0px));z-index:30;display:flex;flex-direction:column;gap:6px;width:min(calc(100vw - 32px),460px);pointer-events:none}
+#toasts{position:fixed;left:50%;transform:translateX(-50%);top:calc(8px + env(safe-area-inset-top,0px));z-index:30;display:flex;flex-direction:column;gap:6px;width:min(calc(100vw - 32px),460px);pointer-events:none}
+.toast{pointer-events:auto;cursor:pointer;transition:opacity .2s}.toast.sai{opacity:0}
 .toast{background:var(--panel2);border:3px solid var(--edge);box-shadow:inset 0 0 0 2px var(--line);padding:8px 12px;font-size:15px;animation:pop .2s steps(3)}
 .toast.good{box-shadow:inset 0 0 0 2px var(--green)}.toast.bad{box-shadow:inset 0 0 0 2px var(--red)}.toast.warn{box-shadow:inset 0 0 0 2px var(--orange)}.toast.gold{box-shadow:inset 0 0 0 2px var(--yel);color:var(--yel)}
 @keyframes pop{from{transform:translateY(8px);opacity:0}to{transform:none;opacity:1}}
@@ -1550,7 +1551,16 @@ function snd(type){
 
 // ---------- eventos da simulação ----------
 function log(txt,k=''){S.log.unshift({t:S.t,txt,k});if(S.log.length>40)S.log.pop();}
-function toast(msg,k=''){const box=$('#toasts');while(box.children.length>=3)box.firstChild.remove();const el=document.createElement('div');el.className='toast '+k;el.textContent=msg;box.appendChild(el);setTimeout(()=>el.remove(),4000);}
+function toast(msg,k=''){const box=$('#toasts');
+  // fica logo abaixo das abas, longe dos botões das janelas (que ficam embaixo)
+  const tb=$('.tabs');const r=tb?tb.getBoundingClientRect():null;
+  box.style.top=(r&&r.bottom>0?Math.round(r.bottom+6):8)+'px';
+  for(const x of [...box.children])if(x.textContent===msg)x.remove();
+  while(box.children.length>=2)box.firstChild.remove();
+  const el=document.createElement('div');el.className='toast '+k;el.textContent=msg;el.title='Toque para fechar';
+  const fecha=()=>{el.classList.add('sai');setTimeout(()=>el.remove(),200);};
+  el.addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();fecha();});
+  box.appendChild(el);setTimeout(fecha,3500);}
 const DOCKX=108;
 function ev(type,d){
   const pn=p=>`Prensa ${p.n}`;
