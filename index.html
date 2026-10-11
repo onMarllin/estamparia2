@@ -757,9 +757,14 @@ function autoGerente(S,ev){
     if(!cnt('preparador'))falta.push('preparador');
     if(n>=2&&cnt('empilhadeira')<Math.ceil(n/3))falta.push('empilhadeira');
     if(n>=2&&!cnt('metrologista'))falta.push('metrologista');
+    const dia=Math.floor(S.t/DAY);
     for(const r of falta){
-      const c=S.cands.filter(x=>x.role===r).sort((a,b)=>b.lv-a.lv)[0];
-      if(!c||S.cash<admissao(c)+40000)continue;
+      let c=S.cands.filter(x=>x.role===r).sort((a,b)=>b.lv-a.lv)[0];
+      // sem currículo dessa função na mesa: o RH automático vai atrás de um no mercado
+      if(!c){c=makeStaff(r,rint(1,Math.min(4,1+Math.floor(S.rep/25))),S);S.cands.push(c);}
+      if(S.cash<admissao(c)+40000){
+        S.rhAviso=S.rhAviso||{};if(S.rhAviso[r]!==dia){S.rhAviso[r]=dia;ev('auto',{k:'rh',txt:`RH automático quer contratar ${ROLES[r].nome.toLowerCase()}, mas está esperando o caixa passar de ${'R$ '+Math.round((admissao(c)+40000)/1000)+' mil'}.`});}
+        continue;}
       S.cash-=admissao(c);S.staff.push(c);S.cands=S.cands.filter(x=>x!==c);
       if(r==='operador'){const p=S.press.find(x=>!x.op);if(p)p.op=c.id;}
       ev('auto',{k:'rh',txt:`RH automático contratou ${c.nome} (${ROLES[r].nome.toLowerCase()}).`});
@@ -1657,7 +1662,8 @@ function showStart(){
   <label for="plantInput">Como se chama a sua fábrica?</label>
   <input type="text" id="plantInput" maxlength="40" placeholder="Estamparia Aço Norte" autocomplete="off">
   <button class="btn wide" data-act="start">Abrir a fábrica</button>
-  ${rankLigado()?'<p class="tiny">Você entra no ranking automaticamente. Dá para trocar o nome depois na aba Ranking.</p>':''}`,'start');
+  ${rankLigado()?'<p class="tiny">Você entra no ranking automaticamente. Dá para trocar o nome depois na aba Ranking.</p>':''}
+  <p class="tiny" style="text-align:center">Golpe de Prensa © 2026 Marllon. Todos os direitos reservados.</p>`,'start');
 }
 function showHelp(){
   openModal(`<h2>Como jogar</h2>
@@ -1673,7 +1679,8 @@ function showHelp(){
   <p class="muted"><span class="good">Verde</span> produzindo, <span class="gold">amarelo</span> trocando ferramenta, <span class="info">azul</span> em revisão, <span class="bad">vermelho</span> parada.</p>
   <h3>Barrinhas embaixo da prensa</h3>
   <p class="muted">A amarela é o andamento do pedido. A de baixo é a saúde da máquina: quando fica vermelha, a prensa está perto de quebrar.</p>
-  <div class="row wrap"><button class="btn" data-act="close">Entendi</button><button class="btn ghost" data-act="tutAgain">Ver o tutorial com a Rita</button></div>`,'help');
+  <div class="row wrap"><button class="btn" data-act="close">Entendi</button><button class="btn ghost" data-act="tutAgain">Ver o tutorial com a Rita</button></div>
+  <p class="tiny">Golpe de Prensa © 2026 Marllon. Todos os direitos reservados.</p>`,'help');
 }
 const FILA=[];
 const durReal=s=>{s=Math.round(s);const h=Math.floor(s/3600),m=Math.floor(s%3600/60);return h?`${h} h${m?` ${m} min`:''}`:`${Math.max(1,m)} min`;};
